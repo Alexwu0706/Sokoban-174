@@ -24,12 +24,11 @@ const createAxisLine = (color, start, end) => {
 const xAxis = createAxisLine(0xff0000, new THREE.Vector3(0, 0, 0), new THREE.Vector3(3, 0, 0)); // Red
 const yAxis = createAxisLine(0x00ff00, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 3, 0)); // Green
 const zAxis = createAxisLine(0x0000ff, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 3)); // Blue
-scene.add(xAxis);
-scene.add(yAxis);
-scene.add(zAxis);
+// scene.add(xAxis);
+// scene.add(yAxis);
+// scene.add(zAxis);
 
-
-// ***** Assignment 2 *****
+// Project
 // Setting up the lights
 const pointLight = new THREE.PointLight(0xffffff, 100, 100);
 pointLight.position.set(5, 5, 5); // Position the light
