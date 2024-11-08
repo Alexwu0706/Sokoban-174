@@ -12,7 +12,7 @@ renderer.setSize( window.innerWidth, window.innerHeight );
 document.body.appendChild( renderer.domElement );
 
 const controls = new OrbitControls(camera, renderer.domElement);
-camera.position.set(0, 5, 10);
+camera.position.set(0, 10, 5); 
 controls.target.set(0, 5, 0);
 
 // Rendering 3D axis
@@ -24,9 +24,9 @@ const createAxisLine = (color, start, end) => {
 const xAxis = createAxisLine(0xff0000, new THREE.Vector3(0, 0, 0), new THREE.Vector3(3, 0, 0)); // Red
 const yAxis = createAxisLine(0x00ff00, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 3, 0)); // Green
 const zAxis = createAxisLine(0x0000ff, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 3)); // Blue
-// scene.add(xAxis);
-// scene.add(yAxis);
-// scene.add(zAxis);
+scene.add(xAxis);
+scene.add(yAxis);
+scene.add(zAxis);
 
 // Project
 // Setting up the lights
@@ -41,14 +41,8 @@ scene.add(directionalLight);
 const ambientLight = new THREE.AmbientLight(0x505050);  // Soft white light
 scene.add(ambientLight);
 
-const phong_material = new THREE.MeshPhongMaterial({
-    color: 0x00ff00, // Green color
-    shininess: 100   // Shininess of the material
-});
 
-
-// Start here.
-///secion 1////////////////////////////////////////////////////////////////
+///Cube Geometry////////////////////////////////////////////////////////////////
 const l = 0.5
 const positions = new Float32Array([
     // Front face
@@ -158,41 +152,6 @@ custom_cube_geometry.setAttribute('position', new THREE.BufferAttribute(position
 custom_cube_geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
 custom_cube_geometry.setIndex(new THREE.BufferAttribute(new Uint16Array(indices), 1));
 
-///secion 2////////////////////////////////////////////////////////////////
-const wireframe_vertices = new Float32Array([
-  // Front face
-      -l, -l, l, //(x,y,z)
-      -l, l, l,
-      -l, l, l,
-      l, l, l,
-      l, l, l,
-      l, -l, l,
-      l, -l, l,
-      -l, -l, l,
-  // Left face
-      -l, l, l,
-      -l, l, -l,
-      -l, l, -l,
-      -l, -l, -l,
-      -l, -l, -l,
-      -l, -l, l,
-  // Top face
-     l,l,l,
-     l,l,-l,
-     l,l,-l,
-     -l,l,-l,
-  // Right face
-    l,l,-l,
-    l,-l,-l,
-    l,-l,-l,
-    l,-l, l,
-  // Bottom face
-    -l,-l,-l,
-    l,-l,-l,
-]);
-const wireframe_greometry = new THREE.BufferGeometry();
-wireframe_greometry.setAttribute( 'position', new THREE.BufferAttribute( wireframe_vertices, 3 ) );
-
 ///secion 3////////////////////////////////////////////////////////////////
 function translationMatrix(tx, ty, tz) {
 	return new THREE.Matrix4().set(
@@ -222,107 +181,118 @@ function scalingMatrix(sx, sy, sz) {
 }
 
 ///secion 4////////////////////////////////////////////////////////////////
-let cubes = [];
-let cubes_wireframe = []; 
+const wall_material = new THREE.MeshPhongMaterial({
+  color: 0x808080, //gray color
+  shininess: 100   
+});
+const player_material = new THREE.MeshPhongMaterial({
+color: 0x00ff00, // Green color
+shininess: 100   
+});
+const box_material = new THREE.MeshPhongMaterial({
+  color: 0xffff00, // Yellow color
+  shininess: 100   
+});
 
-for (let i = 0; i < 7; i++) {
-	let cube = new THREE.Mesh(custom_cube_geometry, phong_material);
-	cube.matrixAutoUpdate = false;
-	cubes.push(cube);
-	scene.add(cube);
+let N_wall_1 = 28;
+let N_player = 1;
+let N_box_1 = 3;
+let walls = [];
+let players = [];
+let boxes = [];
+let boxes_location = [];
+
+for (let i = 0; i < N_wall_1; i++) {
+	let wall = new THREE.Mesh(custom_cube_geometry, wall_material);     //geometry and material is adjustable (refer to assignment 3)
+	wall.matrixAutoUpdate = false;
+	walls.push(wall);
+	scene.add(wall);
+}
+for (let i = 0; i < N_player; i++) {
+	let player = new THREE.Mesh(custom_cube_geometry, player_material);
+	player.matrixAutoUpdate = false;
+	players.push(player);
+	scene.add(player);
+}
+for (let i = 0; i < N_box_1; i++) {
+	let box = new THREE.Mesh(custom_cube_geometry, box_material);
+  let box_location = new THREE.Mesh(custom_cube_geometry, box_material);
+	box.matrixAutoUpdate = false;
+  box_location.matrixAutoUpdate = false;
+	boxes.push(box);
+  boxes_location.push(box_location);
+	scene.add(box);
+  scene.add(box_location);
 }
 
-for (let i = 0; i < 7; i++) {
-	const line = new THREE.LineSegments(wireframe_greometry );
-	line.matrixAutoUpdate = false;
-	cubes_wireframe.push(line);
-	scene.add(line);
+///Game maps////////////////////////////////////////////////////////////////
+let Wx_1 = [0,0,-1,-2,-3,-3,-3,-3,-3,-2,-2,-1,0,0,0,1,2,2,2,3,4,4,4,4,3,2,1,1];
+let Wz_1 = [-1,-2,-2,-2,-2,-1,0,1,2,2,3,3,3,4,5,5,5,4,3,3,3,2,1,0,0,0,0,-1];
+let Bx_1 = [0,2,-1];
+let Bz_1 = [2,1,1];
+let Bxl_1 = [-2,-1,1];
+let Bzl_1 = [0,2,3];
+
+for (let i=0; i< N_wall_1; i++){
+  walls[i].matrix.multiply(translationMatrix(Wx_1[i],0,Wz_1[i]));
+}
+for (let i=0; i< N_box_1; i++){
+  boxes[i].matrix.multiply(translationMatrix(Bx_1[i],0,Bz_1[i]));
+  boxes_location[i].matrix.multiply(translationMatrix(Bxl_1[i],-l,Bzl_1[i])).multiply(scalingMatrix(1,1/100,1));
 }
 
-///secion 5////////////////////////////////////////////////////////////////
-let still = false;
-let visible  = false;
+/////Interaction (Player Motion; Boxes-players interaction; Boxes-Boxes interaction)///////////////////////////
+let forward = false;
+let backward = false;
+let right = false;
+let left = false;
 window.addEventListener('keydown', onKeyPress); // onKeyPress is called each time a key is pressed
 // Function to handle keypress
 function onKeyPress(event) {
     switch (event.key) {
-        case 's': // Note we only do this if s is pressed.
-            still = !still;
+        case 'w': 
+            forward = true;          //Translation +1z
             break;
-        case 'w':
-            visible = !visible;
+        case 'a':
+            left = true;           //Translation -1x
             break;
+        case 's':
+            backward = true;        //Translation -1z
+            break;       
+        case 'd':
+            right = true;     //Translation +1x
+            break;     
         default:
             console.log(`Key ${event.key} pressed`);
     }
 }
 
+//console.log((walls[4].matrix)) (Position)
+
+///animation////////////////////////////////////////////////////////////////
 let animation_time = 0;
 let delta_animation_time;
-let rotation_angle;
 const clock = new THREE.Clock();
-let MAX_ANGLE = 20 * Math.PI/360; // 10 degrees converted to radians
-let T = 3; // oscilation persiod in seconds
 
 function animate() {
-
-  const translation = translationMatrix(0, 3*l, 0); // 
-  let stack_cube = new THREE.Matrix4(); // model transformation matrix we will update (identity matrix)
-  let Transform_M  = new THREE.Matrix4();
-
 	renderer.render( scene, camera );
     controls.update();
     delta_animation_time = clock.getDelta();
     animation_time += delta_animation_time; 
 
-    if (still){
-      rotation_angle = MAX_ANGLE;
-    }else{
-      rotation_angle = MAX_ANGLE*(0.5+0.5*Math.sin(animation_time*2*Math.PI/T+Math.PI/2));
+    if(forward){
+      players[0].matrix.multiply(translationMatrix(0,0,-1));      //"backward"
+      forward = false;
+    }else if(backward){
+      players[0].matrix.multiply(translationMatrix(0,0,1));     //"forward"
+      backward = false;
+    }else if(right){
+      players[0].matrix.multiply(translationMatrix(1,0,0));
+      right = false;
+    }else if(left){
+      players[0].matrix.multiply(translationMatrix(-1,0,0));
+      left = false;
     }
-
-    //operational order = T(l,l,0) -> R(theta) -> T(-l,l,0)
-
-    Transform_M.multiply(translationMatrix(-l,(l+0.25),0)).multiply(rotationMatrixZ(rotation_angle)).multiply(translationMatrix(l,(l+0.25),0));
-
-    if(visible){
-      for (let i = 0; i < cubes_wireframe.length; i++) {
-        cubes[i].visible = false;
-        cubes_wireframe[i].visible = true;
-      } 
-      for (let i = 0; i < cubes_wireframe.length; i++) {
-        cubes_wireframe[i].matrix.copy(stack_cube);
-        stack_cube.multiplyMatrices(translation, stack_cube);   // stack_cube  = stack _cube * translation
-      }
-
-      for (let i = 0; i < cubes_wireframe.length; i++) {
-        cubes_wireframe[i].matrix.multiplyMatrices(scalingMatrix(1, 1.5, 1),cubes_wireframe[i].matrix);
-      }
-
-      for (let i = 1; i < cubes_wireframe.length; i++) {
-        cubes_wireframe[i].matrix.multiplyMatrices(Transform_M,cubes_wireframe[i-1].matrix);
-      }
-
-    }else{
-      for (let i = 0; i < cubes.length; i++) {
-        cubes_wireframe[i].visible = false;
-        cubes[i].visible = true;
-      } 
-      for (let i = 0; i < cubes.length; i++) {
-        cubes[i].matrix.copy(stack_cube);
-        stack_cube.multiplyMatrices(translation, stack_cube);
-      }
-      for (let i = 0; i < cubes.length; i++) {
-        cubes[i].matrix.multiplyMatrices(scalingMatrix(1, 1.5, 1),cubes[i].matrix);
-      }
-      for (let i = 1; i < cubes.length; i++) {
-        cubes[i].matrix.multiplyMatrices(Transform_M,cubes[i-1].matrix);
-      }
-
-    }
-
-
-
 }
 renderer.setAnimationLoop( animate );
 
