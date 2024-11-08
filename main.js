@@ -180,7 +180,7 @@ function scalingMatrix(sx, sy, sz) {
   );
 }
 
-///secion 4////////////////////////////////////////////////////////////////
+///Initialization////////////////////////////////////////////////////////////////
 const wall_material = new THREE.MeshPhongMaterial({
   color: 0x808080, //gray color
   shininess: 100   
@@ -194,12 +194,12 @@ const box_material = new THREE.MeshPhongMaterial({
   shininess: 100   
 });
 
-
 /////Interaction (Player Motion; Boxes-players interaction; Boxes-Boxes interaction)///////////////////////////
 let forward = false;
 let backward = false;
 let right = false;
 let left = false;
+let resetM = false;
 window.addEventListener('keydown', onKeyPress); // onKeyPress is called each time a key is pressed
 // Function to handle keypress
 function onKeyPress(event) {
@@ -214,104 +214,136 @@ function onKeyPress(event) {
             backward = true;        //Translation -1z
             break;       
         case 'd':
-            right = true;     //Translation +1x
+            right = true;          //Translation +1x
             break;     
-        //cases for map updating 
+        case 'r':
+            resetM = true;
+            break;
         default:
             console.log(`Key ${event.key} pressed`);
     }
 }
 
 ///Game maps////////////////////////////////////////////////////////////////
-let Wx = [];
-let Wz = [];
-let Bx = [];
-let Bz = [];
-let Blx = [];
-let Blz = [];
-let N_player = 1;
-let N_wall;
-let N_box;
-
-let walls = [];
-let players = [];
-let boxes = [];
-let boxes_location = [];
-
-
-//Map1 (Undefined)
-let Wx_1 = [0,0,-1,-2,-3,-3,-3,-3,-3,-2,-2,-1,0,0,0,1,2,2,2,3,4,4,4,4,3,2,1,1];
-let Wz_1 = [-1,-2,-2,-2,-2,-1,0,1,2,2,3,3,3,4,5,5,5,4,3,3,3,2,1,0,0,0,0,-1];
-let Bx_1 = [0,2,-1];
-let Bz_1 = [2,1,1];
-let Bxl_1 = [-2,-1,1];
-let Bzl_1 = [0,2,3];
+//Map1
+let Wx_1 = [1,2,3,3,3,2,1,0,0,0,-1,-2,-2,-2,-2,-3,-4,-4,-4,-3,-2,-1,-1,-1,0,1,1,1];
+let Wz_1 = [0,0,0,1,2,2,2,2,3,4,4,4,3,2,1,1,1,0,-1,-1,-1,-1,-2,-3,-3,-3,-2,-1];
+let Bx_1 = [0,-1,-1,1];
+let Bz_1 = [-1,0,1,1];
+let Blx_1 = [-3,0,2,-1];
+let Blz_1 = [0,-2,1,3];
 
 //Map2
 let Wx_2 = [0,0,-1,-2,-3,-3,-3,-3,-3,-2,-2,-1,0,0,0,1,2,2,2,3,4,4,4,4,3,2,1,1];
 let Wz_2 = [-1,-2,-2,-2,-2,-1,0,1,2,2,3,3,3,4,5,5,5,4,3,3,3,2,1,0,0,0,0,-1];
 let Bx_2 = [0,2,-1];
 let Bz_2 = [2,1,1];
-let Bxl_2 = [-2,-1,1];
-let Bzl_2 = [0,2,3];
+let Blx_2 = [-2,-1,1];
+let Blz_2 = [0,2,3];
 
 //Map3 (Undefined)
-let Wx_3 = [0,0,-1,-2,-3,-3,-3,-3,-3,-2,-2,-1,0,0,0,1,2,2,2,3,4,4,4,4,3,2,1,1];
-let Wz_3 = [-1,-2,-2,-2,-2,-1,0,1,2,2,3,3,3,4,5,5,5,4,3,3,3,2,1,0,0,0,0,-1];
+let Wx_3 = [1,2,1,2,-3,-3,-3,-3,-3,-2,-2,-1,0,0,0,1,2,2,2,3,4,4,4,4,3,2,1,1];
+let Wz_3 = [1,2,2,2,-2,-1,0,1,2,2,3,3,3,4,5,5,5,4,3,3,3,2,1,0,0,0,0,-1];
 let Bx_3 = [0,2,-1];
 let Bz_3 = [2,1,1];
-let Bxl_3 = [-2,-1,1];
-let Bzl_3 = [0,2,3];
-
-// for (let i = 0; i < N_wall; i++) {
-// 	let wall = new THREE.Mesh(custom_cube_geometry, wall_material);     //geometry and material is adjustable (refer to assignment 3)
-// 	wall.matrixAutoUpdate = false;
-// 	walls.push(wall);
-// 	scene.add(wall);
-// }
-// for (let i = 0; i < N_player; i++) {
-// 	let player = new THREE.Mesh(custom_cube_geometry, player_material);
-// 	player.matrixAutoUpdate = false;
-// 	players.push(player);
-// 	scene.add(player);
-// }
-// for (let i = 0; i < N_box; i++) {
-// 	let box = new THREE.Mesh(custom_cube_geometry, box_material);
-//   let box_location = new THREE.Mesh(custom_cube_geometry, box_material);
-// 	box.matrixAutoUpdate = false;
-//   box_location.matrixAutoUpdate = false;
-// 	boxes.push(box);
-//   boxes_location.push(box_location);
-// 	scene.add(box);
-//   scene.add(box_location);
-// }
-
-// for (let i=0; i< N_wall_2; i++){
-//   walls[i].matrix.multiply(translationMatrix(Wx[i],0,Wz[i]));
-// }
-// for (let i=0; i< N_box_2; i++){
-//   boxes[i].matrix.multiply(translationMatrix(Bx[i],0,Bz[i]));
-//   boxes_location[i].matrix.multiply(translationMatrix(Blx[i],-l,Blz[i])).multiply(scalingMatrix(1,1/100,1));
-// }
-
-//console.log((walls[4].matrix)) (Position)
+let Blx_3 = [-2,-1,1];
+let Blz_3 = [0,2,3];
 
 ///animation////////////////////////////////////////////////////////////////
 let animation_time = 0;
 let delta_animation_time;
 const clock = new THREE.Clock();
+let flag = 1; //Map Update
 
+let players = [];
+for (let i = 0; i < 1; i++) {
+  let player = new THREE.Mesh(custom_cube_geometry, player_material);
+  player.matrixAutoUpdate = false;
+  players.push(player);
+  scene.add(player);
+}
 function animate() {
+  let Wx = [];
+  let Wz = [];
+  let Bx = [];
+  let Bz = [];
+  let Blx = [];
+  let Blz = [];
+  let wall = [];
+  let walls = [];
+  let box = [];
+  let boxes = [];
+  let box_location = [];
+  let boxes_location = [];
+
 	renderer.render( scene, camera );
     controls.update();
-    delta_animation_time = clock.getDelta();
-    animation_time += delta_animation_time; 
+    // delta_animation_time = clock.getDelta();
+    // animation_time += delta_animation_time; 
+    
+    if (flag > 2) flag = 1;
+    if (flag == 1){
+      Wx = Wx_1;
+      Wz = Wz_1;
+      Bx = Bx_1;
+      Bz = Bz_1;
+      Blx = Blx_1;
+      Blz = Blz_1;
+    }else if(flag == 2){
+      Wx = Wx_2;
+      Wz = Wz_2;
+      Bx = Bx_2;
+      Bz = Bz_2;
+      Blx = Blx_2;
+      Blz = Blz_2;
+    }else if(flag == 3){
+      Wx = Wx_3;
+      Wz = Wz_3;
+      Bx = Bx_3;
+      Bz = Bz_3;
+      Blx = Blx_3;
+      Blz = Blz_3;
+    }
 
+    //Initialization
+    for (let i = 0; i < Wx.length; i++) {
+      wall = new THREE.Mesh(custom_cube_geometry, wall_material);     //geometry and material is adjustable (refer to assignment 3)
+      wall.matrixAutoUpdate = false;
+      walls.push(wall);
+      scene.add(wall);      
+    }
+    for (let i = 0; i < Bx.length; i++) {
+      box = new THREE.Mesh(custom_cube_geometry, box_material);
+      box_location = new THREE.Mesh(custom_cube_geometry, box_material);
+      box.matrixAutoUpdate = false;
+      box_location.matrixAutoUpdate = false;
+      boxes.push(box);
+      boxes_location.push(box_location);
+      scene.add(box);
+      scene.add(box_location);
+    }
+
+    //Transformation
+    for (let i=0; i< Wx.length; i++){
+      let Transform_Wall = new THREE.Matrix4();
+      Transform_Wall.multiply(translationMatrix(Wx[i],0,Wz[i]));
+      walls[i].matrix.copy(Transform_Wall);
+    }
+    for (let i=0; i< Bx.length; i++){
+      let Transform_Box = new THREE.Matrix4();
+      let Transform_BoxL = new THREE.Matrix4();
+      Transform_Box.multiply(translationMatrix(Bx[i],0,Bz[i]));
+      Transform_BoxL.multiply(translationMatrix(Blx[i],-l,Blz[i])).multiply(scalingMatrix(1,1/100,1));
+      boxes[i].matrix.copy(Transform_Box);
+      boxes_location[i].matrix.copy(Transform_BoxL);
+    }
+
+    //Player Motion
     if(forward){
-      players[0].matrix.multiply(translationMatrix(0,0,-1));      //"backward"
+      players[0].matrix.multiply(translationMatrix(0,0,-1));
       forward = false;
     }else if(backward){
-      players[0].matrix.multiply(translationMatrix(0,0,1));     //"forward"
+      players[0].matrix.multiply(translationMatrix(0,0,1));
       backward = false;
     }else if(right){
       players[0].matrix.multiply(translationMatrix(1,0,0));
@@ -320,6 +352,42 @@ function animate() {
       players[0].matrix.multiply(translationMatrix(-1,0,0));
       left = false;
     }
+    
+    //Reset
+    // walls.forEach(wall => scene.remove(wall));
+    // walls = []; // Clear the walls array
+    
+    // // Remove boxes
+    // boxes.forEach(box => scene.remove(box));
+    // boxes = []; // Clear the boxes array
+    
+    // // Remove box locations
+    // boxes_location.forEach(boxLocation => scene.remove(boxLocation));
+    // boxes_location = []; // Clear the box locations array
+    if (resetM) {
+      console.log("yes")
+      walls.forEach(wall => scene.remove(wall));
+      walls = []; // Clear the walls array
+      
+      // Remove boxes
+      boxes.forEach(box => scene.remove(box));
+      boxes = []; // Clear the boxes array
+      
+      // Remove box locations
+      boxes_location.forEach(boxLocation => scene.remove(boxLocation));
+      boxes_location = []; // Clear the box locations array
+      // Reset flag for next map
+      flag = flag + 1;
+      resetM = false;
+    }
+
+
+    //Condition for Reset Maps ()
+        
+    
+    //Interaction Implementation
+        //console.log((walls[4].matrix)) (Position)
+
 }
 renderer.setAnimationLoop( animate );
 
