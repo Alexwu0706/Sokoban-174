@@ -194,52 +194,6 @@ const box_material = new THREE.MeshPhongMaterial({
   shininess: 100   
 });
 
-let N_wall_1 = 28;
-let N_player = 1;
-let N_box_1 = 3;
-let walls = [];
-let players = [];
-let boxes = [];
-let boxes_location = [];
-
-for (let i = 0; i < N_wall_1; i++) {
-	let wall = new THREE.Mesh(custom_cube_geometry, wall_material);     //geometry and material is adjustable (refer to assignment 3)
-	wall.matrixAutoUpdate = false;
-	walls.push(wall);
-	scene.add(wall);
-}
-for (let i = 0; i < N_player; i++) {
-	let player = new THREE.Mesh(custom_cube_geometry, player_material);
-	player.matrixAutoUpdate = false;
-	players.push(player);
-	scene.add(player);
-}
-for (let i = 0; i < N_box_1; i++) {
-	let box = new THREE.Mesh(custom_cube_geometry, box_material);
-  let box_location = new THREE.Mesh(custom_cube_geometry, box_material);
-	box.matrixAutoUpdate = false;
-  box_location.matrixAutoUpdate = false;
-	boxes.push(box);
-  boxes_location.push(box_location);
-	scene.add(box);
-  scene.add(box_location);
-}
-
-///Game maps////////////////////////////////////////////////////////////////
-let Wx_1 = [0,0,-1,-2,-3,-3,-3,-3,-3,-2,-2,-1,0,0,0,1,2,2,2,3,4,4,4,4,3,2,1,1];
-let Wz_1 = [-1,-2,-2,-2,-2,-1,0,1,2,2,3,3,3,4,5,5,5,4,3,3,3,2,1,0,0,0,0,-1];
-let Bx_1 = [0,2,-1];
-let Bz_1 = [2,1,1];
-let Bxl_1 = [-2,-1,1];
-let Bzl_1 = [0,2,3];
-
-for (let i=0; i< N_wall_1; i++){
-  walls[i].matrix.multiply(translationMatrix(Wx_1[i],0,Wz_1[i]));
-}
-for (let i=0; i< N_box_1; i++){
-  boxes[i].matrix.multiply(translationMatrix(Bx_1[i],0,Bz_1[i]));
-  boxes_location[i].matrix.multiply(translationMatrix(Bxl_1[i],-l,Bzl_1[i])).multiply(scalingMatrix(1,1/100,1));
-}
 
 /////Interaction (Player Motion; Boxes-players interaction; Boxes-Boxes interaction)///////////////////////////
 let forward = false;
@@ -262,10 +216,83 @@ function onKeyPress(event) {
         case 'd':
             right = true;     //Translation +1x
             break;     
+        //cases for map updating 
         default:
             console.log(`Key ${event.key} pressed`);
     }
 }
+
+///Game maps////////////////////////////////////////////////////////////////
+let Wx = [];
+let Wz = [];
+let Bx = [];
+let Bz = [];
+let Blx = [];
+let Blz = [];
+let N_player = 1;
+let N_wall;
+let N_box;
+
+let walls = [];
+let players = [];
+let boxes = [];
+let boxes_location = [];
+
+
+//Map1 (Undefined)
+let Wx_1 = [0,0,-1,-2,-3,-3,-3,-3,-3,-2,-2,-1,0,0,0,1,2,2,2,3,4,4,4,4,3,2,1,1];
+let Wz_1 = [-1,-2,-2,-2,-2,-1,0,1,2,2,3,3,3,4,5,5,5,4,3,3,3,2,1,0,0,0,0,-1];
+let Bx_1 = [0,2,-1];
+let Bz_1 = [2,1,1];
+let Bxl_1 = [-2,-1,1];
+let Bzl_1 = [0,2,3];
+
+//Map2
+let Wx_2 = [0,0,-1,-2,-3,-3,-3,-3,-3,-2,-2,-1,0,0,0,1,2,2,2,3,4,4,4,4,3,2,1,1];
+let Wz_2 = [-1,-2,-2,-2,-2,-1,0,1,2,2,3,3,3,4,5,5,5,4,3,3,3,2,1,0,0,0,0,-1];
+let Bx_2 = [0,2,-1];
+let Bz_2 = [2,1,1];
+let Bxl_2 = [-2,-1,1];
+let Bzl_2 = [0,2,3];
+
+//Map3 (Undefined)
+let Wx_3 = [0,0,-1,-2,-3,-3,-3,-3,-3,-2,-2,-1,0,0,0,1,2,2,2,3,4,4,4,4,3,2,1,1];
+let Wz_3 = [-1,-2,-2,-2,-2,-1,0,1,2,2,3,3,3,4,5,5,5,4,3,3,3,2,1,0,0,0,0,-1];
+let Bx_3 = [0,2,-1];
+let Bz_3 = [2,1,1];
+let Bxl_3 = [-2,-1,1];
+let Bzl_3 = [0,2,3];
+
+// for (let i = 0; i < N_wall; i++) {
+// 	let wall = new THREE.Mesh(custom_cube_geometry, wall_material);     //geometry and material is adjustable (refer to assignment 3)
+// 	wall.matrixAutoUpdate = false;
+// 	walls.push(wall);
+// 	scene.add(wall);
+// }
+// for (let i = 0; i < N_player; i++) {
+// 	let player = new THREE.Mesh(custom_cube_geometry, player_material);
+// 	player.matrixAutoUpdate = false;
+// 	players.push(player);
+// 	scene.add(player);
+// }
+// for (let i = 0; i < N_box; i++) {
+// 	let box = new THREE.Mesh(custom_cube_geometry, box_material);
+//   let box_location = new THREE.Mesh(custom_cube_geometry, box_material);
+// 	box.matrixAutoUpdate = false;
+//   box_location.matrixAutoUpdate = false;
+// 	boxes.push(box);
+//   boxes_location.push(box_location);
+// 	scene.add(box);
+//   scene.add(box_location);
+// }
+
+// for (let i=0; i< N_wall_2; i++){
+//   walls[i].matrix.multiply(translationMatrix(Wx[i],0,Wz[i]));
+// }
+// for (let i=0; i< N_box_2; i++){
+//   boxes[i].matrix.multiply(translationMatrix(Bx[i],0,Bz[i]));
+//   boxes_location[i].matrix.multiply(translationMatrix(Blx[i],-l,Blz[i])).multiply(scalingMatrix(1,1/100,1));
+// }
 
 //console.log((walls[4].matrix)) (Position)
 
