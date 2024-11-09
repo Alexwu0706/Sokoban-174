@@ -263,43 +263,25 @@ let Btz_3 = [0,-1,-1,-2];
 //Map4
 //Map5
 
-///animation////////////////////////////////////////////////////////////////
-let animation_time = 0;
-let delta_animation_time;
-const clock = new THREE.Clock();
-let flag = 3; //Map Update
+//storing map info 
+let players = []; // array of players
+let Wx = []; // x pos of wall
+let Wz = []; // z pos of wall
+let Bx = []; // x pos of boxes player can push
+let Bz = []; // z pos of boxes player can push
+let Btx = []; // x pos of boxes target
+let Btz = []; // z pos of boxes target
+let Gx = []; // x pos of ground
+let Gz = []; // z pos of ground
+let walls = []; // array of walls
+let boxes = []; // boxes player can push
+let boxes_target = []; //boxes target
+let ground = [];
+let grounds = [];
 
-let players = [];
-for (let i = 0; i < 1; i++) {
-  let player = new THREE.Mesh(custom_cube_geometry, player_material);
-  player.matrixAutoUpdate = false;
-  players.push(player);
-  scene.add(player);
-}
-function animate() {
-  let Wx = [];
-  let Wz = [];
-  let Bx = [];
-  let Bz = [];
-  let Btx = [];
-  let Btz = [];
-  let Gx = [];
-  let Gz = [];
-  let wall = [];
-  let walls = [];
-  let box = [];
-  let boxes = [];
-  let box_target = [];
-  let boxes_target = [];
-  let ground = [];
-  let grounds = [];
-
-	renderer.render( scene, camera );
-    controls.update();
-    // delta_animation_time = clock.getDelta();
-    // animation_time += delta_animation_time; 
-    
-    if (flag > 3) flag = 1;
+//determining which map to display
+function initializeScene(flag){
+  if (flag > 3) flag = 1;
     if (flag == 1){
       Wx = Wx_1;
       Wz = Wz_1;
@@ -328,17 +310,25 @@ function animate() {
       Gx = Gx_3;
       Gz = Gz_3;
     }
+  
+    //add players to the scene
+    for (let i = 0; i < 1; i++) {
+      let player = new THREE.Mesh(custom_cube_geometry, player_material);
+      player.matrixAutoUpdate = false;
+      players.push(player); 
+      scene.add(player);
+    }
 
     //Initialization
     for (let i = 0; i < Wx.length; i++) {
-      wall = new THREE.Mesh(custom_cube_geometry, wall_material);     //Todo: geometry and material are adjustable (refer to assignment 3)
+      let wall = new THREE.Mesh(custom_cube_geometry, wall_material);     //Todo: geometry and material are adjustable (refer to assignment 3)
       wall.matrixAutoUpdate = false;
       walls.push(wall);
       scene.add(wall);      
     }
     for (let i = 0; i < Bx.length; i++) {
-      box = new THREE.Mesh(custom_cube_geometry, box_material);
-      box_target = new THREE.Mesh(custom_cube_geometry, box_material);
+      let box = new THREE.Mesh(custom_cube_geometry, box_material);
+      let box_target = new THREE.Mesh(custom_cube_geometry, box_material);
       box.matrixAutoUpdate = false;
       box_target.matrixAutoUpdate = false;
       boxes.push(box);
@@ -352,13 +342,16 @@ function animate() {
       grounds.push(ground);
       scene.add(ground);
     }
+    ///Transformation////////////////////////////////////////////////////////////////
 
-    //Transformation
+    //add walls
     for (let i=0; i< Wx.length; i++){
       let Transform_Wall = new THREE.Matrix4();
       Transform_Wall.multiply(translationMatrix(Wx[i],0,Wz[i]));
       walls[i].matrix.copy(Transform_Wall);
     }
+
+    //add boxes that player can move
     for (let i=0; i< Bx.length; i++){
       let Transform_Box = new THREE.Matrix4();
       let Transform_BoxL = new THREE.Matrix4();
@@ -367,13 +360,31 @@ function animate() {
       boxes[i].matrix.copy(Transform_Box);
       boxes_target[i].matrix.copy(Transform_BoxL);
     }
+
+    //add ground tiles
     for (let i=0; i< Gx.length; i++){
       let Transform_Ground = new THREE.Matrix4();
       Transform_Ground.multiply(translationMatrix(Gx[i],-l,Gz[i])).multiply(scalingMatrix(1,1/1000,1));
       grounds[i].matrix.copy(Transform_Ground);
     }
 
-    //Player Motion
+}
+
+initializeScene(3); //initialize scene with map 3
+
+
+
+///animation////////////////////////////////////////////////////////////////
+let animation_time = 0;
+let delta_animation_time;
+const clock = new THREE.Clock();
+
+function animate() {
+  
+	renderer.render( scene, camera );
+    controls.update();
+    
+    //Player Motion (could maybe set delay to prevent player from moving too fast or hold key down)
     if(forward){
       players[0].matrix.multiply(translationMatrix(0,0,-1));
       forward = false;
