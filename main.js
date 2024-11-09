@@ -263,7 +263,6 @@ let animation_time = 0;
 let delta_animation_time;
 const clock = new THREE.Clock();
 let flag = 1; //Map Update
-let count = 0; //box match count Update;
 let resetM = false;
 
 let Transform_Box = new THREE.Matrix4();      //Transformation of Box (Interaction Implementation)
@@ -291,6 +290,7 @@ function animate() {
   let boxes_target = [];
   let ground = [];
   let grounds = [];
+  let count = 0; //box match count Update;
 
 	renderer.render( scene, camera );
     controls.update();
