@@ -182,7 +182,7 @@ function scalingMatrix(sx, sy, sz) {
 
 ///Initialization////////////////////////////////////////////////////////////////
 const wall_material = new THREE.MeshPhongMaterial({
-  color: 0x808080, //gray color
+  color: 0x808080, //Gray color
   shininess: 100   
 });
 const player_material = new THREE.MeshPhongMaterial({
@@ -203,7 +203,6 @@ let forward = false;
 let backward = false;
 let right = false;
 let left = false;
-let resetM = false;
 window.addEventListener('keydown', onKeyPress); // onKeyPress is called each time a key is pressed
 // Function to handle keypress
 function onKeyPress(event) {
@@ -220,10 +219,6 @@ function onKeyPress(event) {
         case 'd':
             right = true;          //Translation +1x
             break;     
-        case 'r':
-            resetM = true;
-            console.log("resetM set to true");  // Debugging line
-            break;
         default:
             console.log(`Key ${event.key} pressed`);
     }
@@ -250,7 +245,7 @@ let Gz_2 = [-1,-1,0,0,1,1,1,1,1,1,2,2,2,2,4];
 let Btx_2 = [-2,-1,1];
 let Btz_2 = [0,2,3];
 
-//Map3 (Undefined)
+//Map3
 let Wx_3 = [1,1,1,1,0,-1,-2,-3,-4,-4,-5,-6,-6,-6,-6,-5,-4,-4,-3,-2,-2,-1,0,1,1,1,1];
 let Wz_3 = [0,1,2,3,3,3,3,2,2,1,1,1,0,-1,-2,-2,-2,-3,-3,-3,-4,-4,-4,-4,-3,-2,-1];
 let Bx_3 = [-1,-1,-2,-3];
@@ -267,8 +262,11 @@ let Btz_3 = [0,-1,-1,-2];
 let animation_time = 0;
 let delta_animation_time;
 const clock = new THREE.Clock();
-let flag = 3; //Map Update
+let flag = 1; //Map Update
+let count = 0; //box match count Update;
+let resetM = false;
 
+let Transform_Box = new THREE.Matrix4();      //Transformation of Box (Interaction Implementation)
 let players = [];
 for (let i = 0; i < 1; i++) {
   let player = new THREE.Mesh(custom_cube_geometry, player_material);
@@ -355,22 +353,14 @@ function animate() {
 
     //Transformation
     for (let i=0; i< Wx.length; i++){
-      let Transform_Wall = new THREE.Matrix4();
-      Transform_Wall.multiply(translationMatrix(Wx[i],0,Wz[i]));
-      walls[i].matrix.copy(Transform_Wall);
+      walls[i].matrix.multiply(translationMatrix(Wx[i],0,Wz[i]));;
     }
     for (let i=0; i< Bx.length; i++){
-      let Transform_Box = new THREE.Matrix4();
-      let Transform_BoxL = new THREE.Matrix4();
-      Transform_Box.multiply(translationMatrix(Bx[i],0,Bz[i]));
-      Transform_BoxL.multiply(translationMatrix(Btx[i],-l,Btz[i])).multiply(scalingMatrix(1,1/50,1));
-      boxes[i].matrix.copy(Transform_Box);
-      boxes_target[i].matrix.copy(Transform_BoxL);
+      boxes[i].matrix.multiply(translationMatrix(Bx[i],0,Bz[i]));;
+      boxes_target[i].matrix.multiply(translationMatrix(Btx[i],-l,Btz[i])).multiply(scalingMatrix(1,1/50,1));
     }
     for (let i=0; i< Gx.length; i++){
-      let Transform_Ground = new THREE.Matrix4();
-      Transform_Ground.multiply(translationMatrix(Gx[i],-l,Gz[i])).multiply(scalingMatrix(1,1/1000,1));
-      grounds[i].matrix.copy(Transform_Ground);
+      grounds[i].matrix.multiply(translationMatrix(Gx[i],-l,Gz[i])).multiply(scalingMatrix(1,1/1000,1));
     }
 
     //Player Motion
@@ -387,21 +377,17 @@ function animate() {
       players[0].matrix.multiply(translationMatrix(-1,0,0));
       left = false;
     }
-    
-    //Reset
 
-    // if(true){
-    //   for (let i = 0; i < Wx.length; i++) {
-    //     scene.remove(walls[i]);      
-    //   }
-    //   for (let i = 0; i < Bx.length; i++) {
-    //     scene.remove(boxes[i]);
-    //     scene.remove(boxes_target[i]);
-    //   }
-    // }
-    
-    if(resetM){                                       //why does my removal not working properly even if my if statement gets triggered?
-      console.log("Running reset");
+    //Reset Maps
+    for (let i = 0; i < Bx.length; i++) {
+      if (boxes[i].position.equals(boxes_target[i].position)) { 
+        count += 1;
+      }
+    }
+    if (count === Bx.length){
+      resetM = true;
+    }
+    if (resetM) {
       for (let i = 0; i < Wx.length; i++) {
         scene.remove(walls[i]);      
       }
@@ -409,28 +395,13 @@ function animate() {
         scene.remove(boxes[i]);
         scene.remove(boxes_target[i]);
       }
-      //resetM = false;
+      for (let i = 0; i < Gx.length; i++){
+        scene.remove(ground[i]);
+      }
+        flag = flag + 1;
+        resetM = false;
     }
-    
 
-
-
-
-
-
-
-
-
-
-
-    // if (resetM === true) {
-    //   // Reset flag for next map
-    //   //flag = flag + 1;
-    //   //resetM = false;
-    // }
-
-    //Condition for Reset Maps ()
-        
     //Interaction Implementation
         //console.log((walls[4].matrix)) (Position)         //what condition should I use if I want to know whether my box location is overlapping with its targeted location?
                                                             //e.q by saying like if their matrix is equal? 
