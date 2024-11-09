@@ -403,9 +403,8 @@ function animate() {
     }
 
     //Interaction Implementation
-        //console.log((walls[4].matrix)) (Position)         //what condition should I use if I want to know whether my box location is overlapping with its targeted location?
-                                                            //e.q by saying like if their matrix is equal? 
-
+           
+                                              
 }
 renderer.setAnimationLoop( animate );
 
