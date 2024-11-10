@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-
+import { collisionCheck } from './utils/collisionCheck';
 
 const scene = new THREE.Scene();
 
@@ -258,46 +258,28 @@ let Btz_3 = [0,-1,-1,-2];
 //Map4
 //Map5
 
-///animation////////////////////////////////////////////////////////////////
-let animation_time = 0;
-let delta_animation_time;
-const clock = new THREE.Clock();
-let flag = 1; //Map Update
-let resetM = false;
+//storing map info 
+let players = []; // array of players
+let Wx = []; // x pos of wall
+let Wz = []; // z pos of wall
+let Bx = []; // x pos of boxes player can push
+let Bz = []; // z pos of boxes player can push
+let Btx = []; // x pos of boxes target
+let Btz = []; // z pos of boxes target
+let Gx = []; // x pos of ground
+let Gz = []; // z pos of ground
+let walls = []; // array of walls
+let wallsBB = []; // bounding box of walls
+let boxes = []; // boxes player can push
+let boxBB = []; //bounding box of boxes
+let boxes_target = []; //boxes target
+let ground = [];
+let grounds = [];
+let boxTargetBB = []; //bounding box of boxes target if all target boxes have a box in contact, then a win is triggered
 
-let Transform_Box = new THREE.Matrix4();      //Transformation of Box (Interaction Implementation)
-let players = [];
-for (let i = 0; i < 1; i++) {
-  let player = new THREE.Mesh(custom_cube_geometry, player_material);
-  player.matrixAutoUpdate = false;
-  players.push(player);
-  scene.add(player);
-}
-function animate() {
-  let Wx = [];
-  let Wz = [];
-  let Bx = [];
-  let Bz = [];
-  let Btx = [];
-  let Btz = [];
-  let Gx = [];
-  let Gz = [];
-  let wall = [];
-  let walls = [];
-  let box = [];
-  let boxes = [];
-  let box_target = [];
-  let boxes_target = [];
-  let ground = [];
-  let grounds = [];
-  let count = 0; //box match count Update;
-
-	renderer.render( scene, camera );
-    controls.update();
-    // delta_animation_time = clock.getDelta();
-    // animation_time += delta_animation_time; 
-    
-    if (flag > 3) flag = 1;
+//determining which map to display
+function initializeScene(flag){
+  if (flag > 3) flag = 1;
     if (flag == 1){
       Wx = Wx_1;
       Wz = Wz_1;
@@ -326,17 +308,29 @@ function animate() {
       Gx = Gx_3;
       Gz = Gz_3;
     }
+  
+    //add players to the scene
+    for (let i = 0; i < 1; i++) {
+      let player = new THREE.Mesh(custom_cube_geometry, player_material);
+      player.matrixAutoUpdate = false;
+      players.push(player); 
+      scene.add(player);
+    }
 
     //Initialization
+
+
+    //add walls to scene
     for (let i = 0; i < Wx.length; i++) {
-      wall = new THREE.Mesh(custom_cube_geometry, wall_material);     //Todo: geometry and material are adjustable (refer to assignment 3)
+      let wall = new THREE.Mesh(custom_cube_geometry, wall_material);     //Todo: geometry and material are adjustable (refer to assignment 3)
       wall.matrixAutoUpdate = false;
       walls.push(wall);
       scene.add(wall);      
     }
+    //add boxes to scene
     for (let i = 0; i < Bx.length; i++) {
-      box = new THREE.Mesh(custom_cube_geometry, box_material);
-      box_target = new THREE.Mesh(custom_cube_geometry, box_material);
+      let box = new THREE.Mesh(custom_cube_geometry, box_material);
+      let box_target = new THREE.Mesh(custom_cube_geometry, box_material);
       box.matrixAutoUpdate = false;
       box_target.matrixAutoUpdate = false;
       boxes.push(box);
@@ -344,17 +338,20 @@ function animate() {
       scene.add(box);
       scene.add(box_target);
     }
+    //add ground tiles to scene
     for (let i=0; i< Gx.length; i++){
       ground = new THREE.Mesh(custom_cube_geometry, ground_material);
       ground.matrixAutoUpdate = false;
       grounds.push(ground);
       scene.add(ground);
     }
+    ///Transformation////////////////////////////////////////////////////////////////
 
-    //Transformation
+    //move walls in map to their respective positions
     for (let i=0; i< Wx.length; i++){
       walls[i].matrix.multiply(translationMatrix(Wx[i],0,Wz[i]));;
     }
+    //move boxes in map to their respective positions
     for (let i=0; i< Bx.length; i++){
       boxes[i].matrix.multiply(translationMatrix(Bx[i],0,Bz[i]));;
       boxes_target[i].matrix.multiply(translationMatrix(Btx[i],-l,Btz[i])).multiply(scalingMatrix(1,1/50,1));
@@ -363,7 +360,23 @@ function animate() {
       grounds[i].matrix.multiply(translationMatrix(Gx[i],-l,Gz[i])).multiply(scalingMatrix(1,1/1000,1));
     }
 
-    //Player Motion
+}
+
+initializeScene(3); //initialize scene with map 3
+
+
+
+///animation////////////////////////////////////////////////////////////////
+let animation_time = 0;
+let delta_animation_time;
+const clock = new THREE.Clock();
+
+function animate() {
+  
+	renderer.render( scene, camera );
+    controls.update();
+    
+    //Player Motion (could maybe set delay to prevent player from moving too fast or hold key down)
     if(forward){
       players[0].matrix.multiply(translationMatrix(0,0,-1));
       forward = false;
@@ -376,6 +389,13 @@ function animate() {
     }else if(left){
       players[0].matrix.multiply(translationMatrix(-1,0,0));
       left = false;
+    }
+
+    //collision detections
+    for (let i = 0; i < boxes.length; i++){
+      if (collisionCheck(players[0],boxes[i])){
+        //console.log("Player collided with box", i);
+      }
     }
 
     //Reset Maps
