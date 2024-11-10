@@ -240,7 +240,7 @@ let Gz_1 = [-1,0,0,0,1,1,1,1,2];
 let Btx_1 = [-3,0,2,-1];
 let Btz_1 = [0,-2,1,3];
 
-//Map2
+//Map2   <--- This level is impossible lol 
 let Wx_2 = [0,0,-1,-2,-3,-3,-3,-3,-3,-2,-2,-1,0,0,0,1,2,2,2,3,4,4,4,4,3,2,1,1];
 let Wz_2 = [-1,-2,-2,-2,-2,-1,0,1,2,2,3,3,3,4,5,5,5,4,3,3,3,2,1,0,0,0,0,-1];
 let Bx_2 = [0,2,-1];
@@ -511,6 +511,7 @@ function animate() {
       levelCleared = true;
     }
     
+    //can press r to reset the current level but won't advance to next level
     if (resetM) {
       for (let i = 0; i < Wx.length; i++) {
         scene.remove(walls[i]);
