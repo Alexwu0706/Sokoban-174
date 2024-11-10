@@ -274,10 +274,13 @@ let Btz = []; // z pos of boxes target
 let Gx = []; // x pos of ground
 let Gz = []; // z pos of ground
 let walls = []; // array of walls
+let wallsBB = []; // bounding box of walls
 let boxes = []; // boxes player can push
+let boxBB = []; //bounding box of boxes
 let boxes_target = []; //boxes target
 let ground = [];
 let grounds = [];
+let boxTargetBB = []; //bounding box of boxes target if all target boxes have a box in contact, then a win is triggered
 
 //determining which map to display
 function initializeScene(flag){
