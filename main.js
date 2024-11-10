@@ -260,6 +260,7 @@ let Btz_3 = [0,-1,-1,-2];
 
 //storing map info 
 let players = []; // array of players
+let playersBB = []; // bounding box of players
 let Wx = []; // x pos of wall
 let Wz = []; // z pos of wall
 let Bx = []; // x pos of boxes player can push
@@ -271,11 +272,11 @@ let Gz = []; // z pos of ground
 let walls = []; // array of walls
 let wallsBB = []; // bounding box of walls
 let boxes = []; // boxes player can push
-let boxBB = []; //bounding box of boxes
+let boxesBB = []; //bounding box of boxes
 let boxes_target = []; //boxes target
 let ground = [];
 let grounds = [];
-let boxTargetBB = []; //bounding box of boxes target if all target boxes have a box in contact, then a win is triggered
+let boxes_TargetBB = []; //bounding box of boxes target if all target boxes have a box in contact, then a win is triggered
 
 //determining which map to display
 function initializeScene(flag){
@@ -312,8 +313,11 @@ function initializeScene(flag){
     //add players to the scene
     for (let i = 0; i < 1; i++) {
       let player = new THREE.Mesh(custom_cube_geometry, player_material);
+      let playerBB = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3()); //Takes in Far and Near points
+      playerBB.setFromObject(player); //Set the bounding box of the player
       player.matrixAutoUpdate = false;
       players.push(player); 
+      playersBB.push(playerBB);
       scene.add(player);
     }
 
@@ -323,18 +327,30 @@ function initializeScene(flag){
     //add walls to scene
     for (let i = 0; i < Wx.length; i++) {
       let wall = new THREE.Mesh(custom_cube_geometry, wall_material);     //Todo: geometry and material are adjustable (refer to assignment 3)
+      let wallBB = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3()); //Takes in Far and Near points
+      wallBB.setFromObject(wall); //Set the bounding box of the wall
       wall.matrixAutoUpdate = false;
+      wallsBB.push(wallBB);
       walls.push(wall);
-      scene.add(wall);      
+      scene.add(wall);     
     }
     //add boxes to scene
     for (let i = 0; i < Bx.length; i++) {
       let box = new THREE.Mesh(custom_cube_geometry, box_material);
       let box_target = new THREE.Mesh(custom_cube_geometry, box_material);
+      let boxBB = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
+      let box_TargetBB = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
+
+      boxBB.setFromObject(box);
+      box_TargetBB.setFromObject(box_target);
       box.matrixAutoUpdate = false;
       box_target.matrixAutoUpdate = false;
+
       boxes.push(box);
       boxes_target.push(box_target);
+      boxesBB.push(boxBB);
+      boxes_TargetBB.push(box_TargetBB);
+      
       scene.add(box);
       scene.add(box_target);
     }
@@ -349,12 +365,15 @@ function initializeScene(flag){
 
     //move walls in map to their respective positions
     for (let i=0; i< Wx.length; i++){
-      walls[i].matrix.multiply(translationMatrix(Wx[i],0,Wz[i]));;
+      walls[i].matrix.multiply(translationMatrix(Wx[i],0,Wz[i]));
+      wallsBB[i].setFromObject(walls[i]);
     }
     //move boxes in map to their respective positions
     for (let i=0; i< Bx.length; i++){
       boxes[i].matrix.multiply(translationMatrix(Bx[i],0,Bz[i]));;
       boxes_target[i].matrix.multiply(translationMatrix(Btx[i],-l,Btz[i])).multiply(scalingMatrix(1,1/50,1));
+      boxesBB[i].setFromObject(boxes[i]);
+      boxes_TargetBB[i].setFromObject(boxes_target[i]);
     }
     for (let i=0; i< Gx.length; i++){
       grounds[i].matrix.multiply(translationMatrix(Gx[i],-l,Gz[i])).multiply(scalingMatrix(1,1/1000,1));
@@ -390,6 +409,7 @@ let flag = 1; //Map Update
 
 
 function animate() {
+  let previousMovement = [0,0]; // x,z movement
   let boxOnTarget = 0; 
 	renderer.render( scene, camera );
     controls.update();
@@ -397,22 +417,30 @@ function animate() {
     //Player Motion (could maybe set delay to prevent player from moving too fast or hold key down)
     if(forward){
       players[0].matrix.multiply(translationMatrix(0,0,-1));
+      previousMovement = [0,-1];
       forward = false;
     }else if(backward){
       players[0].matrix.multiply(translationMatrix(0,0,1));
+      previousMovement = [0,1];
       backward = false;
     }else if(right){
       players[0].matrix.multiply(translationMatrix(1,0,0));
+      previousMovement = [1,0];
       right = false;
     }else if(left){
       players[0].matrix.multiply(translationMatrix(-1,0,0));
+      previousMovement = [-1,0];
       left = false;
     }
 
+    //update boundary boxes
+    playersBB[0].setFromObject(players[0]);
+
+
     //collision detections
-    for (let i = 0; i < boxes.length; i++){
-      if (collisionCheck(players[0],boxes[i])){
-        //console.log("Player collided with box", i);
+    for (let i = 0; i < wallsBB.length; i++){
+      if (collisionCheck(playersBB[0],wallsBB[i])){
+        players[0].matrix.multiply(translationMatrix(-previousMovement[0],0,-previousMovement[1]));
       }
     }
 
