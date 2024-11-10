@@ -350,7 +350,7 @@ function initializeScene(flag){
       boxes_target.push(box_target);
       boxesBB.push(boxBB);
       boxes_TargetBB.push(box_TargetBB);
-      
+
       scene.add(box);
       scene.add(box_target);
     }
@@ -437,20 +437,51 @@ function animate() {
     playersBB[0].setFromObject(players[0]);
 
 
-    //collision detections
+    //collision detections////////////////////////////////////////////
+
+    //do not let player move through walls
     for (let i = 0; i < wallsBB.length; i++){
       if (collisionCheck(playersBB[0],wallsBB[i])){
         players[0].matrix.multiply(translationMatrix(-previousMovement[0],0,-previousMovement[1]));
       }
     }
-
-    //Reset Maps
-    // for (let i = 0; i < Bx.length; i++) {
-    //   if (boxes[i].position.equals(boxes_target[i].position)) { 
-    //     console.log(boxes[i].position, boxes_target[i].position);
-    //     boxOnTarget += 1;
-    //   }
-    // }
+    //player can push boxes
+    //cannot push 2 boxes at once
+    //boxes cannot push through walls
+    for (let i = 0; i < boxesBB.length; i++){
+      if (collisionCheck(playersBB[0], boxesBB[i])){
+        //intial move forward
+        boxes[i].matrix.multiply(translationMatrix(previousMovement[0],0,previousMovement[1])); 
+        boxesBB[i].setFromObject(boxes[i]);
+        //move back if collision with wall
+        for (let j = 0; j < wallsBB.length; j++){
+          if (collisionCheck(boxesBB[i],wallsBB[j])){
+            boxes[i].matrix.multiply(translationMatrix(-previousMovement[0],0,-previousMovement[1]));
+            boxesBB[i].setFromObject(boxes[i]);
+          }
+        }
+        //move back if collision with another box
+        //j is the other boxes
+        for (let j = 0; j < boxesBB.length; j++){
+          if (i != j && collisionCheck(boxesBB[i],boxesBB[j])){
+            boxes[i].matrix.multiply(translationMatrix(-previousMovement[0],0,-previousMovement[1]));
+            boxesBB[i].setFromObject(boxes[i]);
+          }
+        }
+        //check if boxes are on target
+        
+      }
+    }
+    //do not let player move through boxes
+    for (let i = 0; i < boxesBB.length; i++){
+      if (collisionCheck(playersBB[0],boxesBB[i])){
+        players[0].matrix.multiply(translationMatrix(-previousMovement[0],0,-previousMovement[1]));
+      }
+    }
+    
+    console.log("box is on target",boxOnTarget);
+    //check if boxes are on target for the win
+    
 
     if (boxOnTarget === Bx.length){
       resetM = true;
