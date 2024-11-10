@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-
+import { collisionCheck } from './utils/collisionCheck';
 
 const scene = new THREE.Scene();
 
@@ -320,12 +320,16 @@ function initializeScene(flag){
     }
 
     //Initialization
+
+
+    //add walls to scene
     for (let i = 0; i < Wx.length; i++) {
       let wall = new THREE.Mesh(custom_cube_geometry, wall_material);     //Todo: geometry and material are adjustable (refer to assignment 3)
       wall.matrixAutoUpdate = false;
       walls.push(wall);
       scene.add(wall);      
     }
+    //add boxes to scene
     for (let i = 0; i < Bx.length; i++) {
       let box = new THREE.Mesh(custom_cube_geometry, box_material);
       let box_target = new THREE.Mesh(custom_cube_geometry, box_material);
@@ -336,6 +340,7 @@ function initializeScene(flag){
       scene.add(box);
       scene.add(box_target);
     }
+    //add ground tiles to scene
     for (let i=0; i< Gx.length; i++){
       ground = new THREE.Mesh(custom_cube_geometry, ground_material);
       ground.matrixAutoUpdate = false;
@@ -344,14 +349,14 @@ function initializeScene(flag){
     }
     ///Transformation////////////////////////////////////////////////////////////////
 
-    //add walls
+    //move walls in map to their respective positions
     for (let i=0; i< Wx.length; i++){
       let Transform_Wall = new THREE.Matrix4();
       Transform_Wall.multiply(translationMatrix(Wx[i],0,Wz[i]));
       walls[i].matrix.copy(Transform_Wall);
     }
 
-    //add boxes that player can move
+    //move boxes in map to their respective positions
     for (let i=0; i< Bx.length; i++){
       let Transform_Box = new THREE.Matrix4();
       let Transform_BoxL = new THREE.Matrix4();
@@ -361,7 +366,7 @@ function initializeScene(flag){
       boxes_target[i].matrix.copy(Transform_BoxL);
     }
 
-    //add ground tiles
+    //move boxes in map to their respective positions
     for (let i=0; i< Gx.length; i++){
       let Transform_Ground = new THREE.Matrix4();
       Transform_Ground.multiply(translationMatrix(Gx[i],-l,Gz[i])).multiply(scalingMatrix(1,1/1000,1));
@@ -397,6 +402,13 @@ function animate() {
     }else if(left){
       players[0].matrix.multiply(translationMatrix(-1,0,0));
       left = false;
+    }
+
+    //collision detections
+    for (let i = 0; i < boxes.length; i++){
+      if (collisionCheck(players[0],boxes[i])){
+        //console.log("Player collided with box", i);
+      }
     }
     
     //Reset
