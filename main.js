@@ -360,10 +360,25 @@ function initializeScene(flag){
       grounds[i].matrix.multiply(translationMatrix(Gx[i],-l,Gz[i])).multiply(scalingMatrix(1,1/1000,1));
     }
 
+    //add grid to scene
+    createGrid(walls.length, walls.length);
+
 }
 
+//m x n grid
+function createGrid(m,n){
+  let grid = new THREE.GridHelper(m,n);
+  let translation = new THREE.Matrix4().makeTranslation(0, 1, 0); // Adjust the y value (1) as needed
+  grid.applyMatrix4(translation);
+  scene.add(grid);
+}
+
+
+
+
 initializeScene(3); //initialize scene with map 3
-scene.add(new THREE.GridHelper(10, 10)); // Add a grid to better visualize the movement
+
+
 
 
 ///animation////////////////////////////////////////////////////////////////
