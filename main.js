@@ -363,16 +363,19 @@ function initializeScene(flag){
 }
 
 initializeScene(3); //initialize scene with map 3
-
+scene.add(new THREE.GridHelper(10, 10)); // Add a grid to better visualize the movement
 
 
 ///animation////////////////////////////////////////////////////////////////
 let animation_time = 0;
 let delta_animation_time;
 const clock = new THREE.Clock();
+let resetM = false;
+let flag = 1; //Map Update
+
 
 function animate() {
-  
+  let boxOnTarget = 0; 
 	renderer.render( scene, camera );
     controls.update();
     
@@ -399,14 +402,17 @@ function animate() {
     }
 
     //Reset Maps
-    for (let i = 0; i < Bx.length; i++) {
-      if (boxes[i].position.equals(boxes_target[i].position)) { 
-        count += 1;
-      }
-    }
-    if (count === Bx.length){
+    // for (let i = 0; i < Bx.length; i++) {
+    //   if (boxes[i].position.equals(boxes_target[i].position)) { 
+    //     console.log(boxes[i].position, boxes_target[i].position);
+    //     boxOnTarget += 1;
+    //   }
+    // }
+
+    if (boxOnTarget === Bx.length){
       resetM = true;
     }
+    console.log(resetM);
     if (resetM) {
       for (let i = 0; i < Wx.length; i++) {
         scene.remove(walls[i]);      
