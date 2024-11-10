@@ -203,6 +203,8 @@ let forward = false;
 let backward = false;
 let right = false;
 let left = false;
+let resetM = false;
+
 window.addEventListener('keydown', onKeyPress); // onKeyPress is called each time a key is pressed
 // Function to handle keypress
 function onKeyPress(event) {
@@ -218,7 +220,10 @@ function onKeyPress(event) {
             break;       
         case 'd':
             right = true;          //Translation +1x
-            break;     
+            break; 
+        case 'r':
+            resetM = true;
+            break;    
         default:
             console.log(`Key ${event.key} pressed`);
     }
@@ -274,7 +279,6 @@ let wallsBB = []; // bounding box of walls
 let boxes = []; // boxes player can push
 let boxesBB = []; //bounding box of boxes
 let boxes_target = []; //boxes target
-let ground = [];
 let grounds = [];
 let boxes_TargetBB = []; //bounding box of boxes target if all target boxes have a box in contact, then a win is triggered
 
@@ -356,7 +360,7 @@ function initializeScene(flag){
     }
     //add ground tiles to scene
     for (let i=0; i< Gx.length; i++){
-      ground = new THREE.Mesh(custom_cube_geometry, ground_material);
+      let ground = new THREE.Mesh(custom_cube_geometry, ground_material);
       ground.matrixAutoUpdate = false;
       grounds.push(ground);
       scene.add(ground);
@@ -372,9 +376,9 @@ function initializeScene(flag){
     for (let i=0; i< Bx.length; i++){
       boxes[i].matrix.multiply(translationMatrix(Bx[i],0,Bz[i]));;
       boxes_target[i].matrix.multiply(translationMatrix(Btx[i],-l,Btz[i])).multiply(scalingMatrix(1,1/50,1));
-      boxesBB[i].setFromObject(boxes[i]);
       boxes_TargetBB[i].setFromObject(boxes_target[i]);
-    }
+      boxesBB[i].setFromObject(boxes[i]);
+``    }
     for (let i=0; i< Gx.length; i++){
       grounds[i].matrix.multiply(translationMatrix(Gx[i],-l,Gz[i])).multiply(scalingMatrix(1,1/1000,1));
     }
@@ -392,10 +396,34 @@ function createGrid(m,n){
   scene.add(grid);
 }
 
+//translate target boxes l up and check for collision with boxes
+
+function checkTargetBoxes(){
+  let boxesOnTargets = 0;
+  let boxIsOnTarget = false;
+  for (let i= 0; i < boxes_target.length; i++){
+    boxIsOnTarget = false;
+    boxes_target[i].matrix.multiply(translationMatrix(0,l,0));
+    boxes_TargetBB[i].setFromObject(boxes_target[i]);
+    for (let j = 0; j < boxesBB.length; j++){
+      //if there is a collision with any box update count
+      if (collisionCheck(boxesBB[j],boxes_TargetBB[i])){
+        boxIsOnTarget = true;
+      } 
+    }
+    boxes_target[i].matrix.multiply(translationMatrix(0,-l,0));
+    boxes_TargetBB[i].setFromObject(boxes_target[i]);
+    if (boxIsOnTarget){
+      boxesOnTargets++;
+    }
+  }
+  return boxesOnTargets
+
+}
 
 
 
-initializeScene(3); //initialize scene with map 3
+initializeScene(1); //initialize scene with map 3
 
 
 
@@ -404,13 +432,12 @@ initializeScene(3); //initialize scene with map 3
 let animation_time = 0;
 let delta_animation_time;
 const clock = new THREE.Clock();
-let resetM = false;
+let levelCleared = false;
 let flag = 1; //Map Update
 
 
 function animate() {
   let previousMovement = [0,0]; // x,z movement
-  let boxOnTarget = 0; 
 	renderer.render( scene, camera );
     controls.update();
     
@@ -478,28 +505,46 @@ function animate() {
         players[0].matrix.multiply(translationMatrix(-previousMovement[0],0,-previousMovement[1]));
       }
     }
-    
-    console.log("box is on target",boxOnTarget);
-    //check if boxes are on target for the win
-    
-
-    if (boxOnTarget === Bx.length){
+    //all boxes are on targets
+    if (checkTargetBoxes() == boxes_target.length){
       resetM = true;
+      levelCleared = true;
     }
-    console.log(resetM);
+    
     if (resetM) {
       for (let i = 0; i < Wx.length; i++) {
-        scene.remove(walls[i]);      
+        scene.remove(walls[i]);
+
       }
       for (let i = 0; i < Bx.length; i++) {
         scene.remove(boxes[i]);
         scene.remove(boxes_target[i]);
       }
       for (let i = 0; i < Gx.length; i++){
-        scene.remove(ground[i]);
+        scene.remove(grounds[i]);
       }
-        flag = flag + 1;
+      for (let i = 0; i < players.length; i++) {  
+        scene.remove(players[i]);
+      }
+        // Empty the arrays
+        walls.length = 0;
+        wallsBB.length = 0;
+        boxes.length = 0;
+        boxes_target.length = 0;
+        boxesBB.length = 0;
+        boxes_TargetBB.length = 0;
+        grounds.length = 0;
+        players.length = 0;
+        playersBB.length = 0;
+
+        //only advance if level cleared
+        if (levelCleared){
+          flag = flag + 1;
+          levelCleared = false;
+        }
+
         resetM = false;
+        initializeScene(flag);
     }
 
     //Interaction Implementation
