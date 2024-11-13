@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { collisionCheck } from './utils/collisionCheck';
+import { updateTitleText } from './utils/textDisplays';
 
 const scene = new THREE.Scene();
 
@@ -385,7 +386,7 @@ function initializeScene(flag){
 
     //add grid to scene
     createGrid(walls.length, walls.length);
-
+    updateTitleText(flag);
 }
 
 //m x n grid
@@ -397,7 +398,7 @@ function createGrid(m,n){
 }
 
 //translate target boxes l up and check for collision with boxes
-
+//check if all boxes are on their targets
 function checkTargetBoxes(){
   let boxesOnTargets = 0;
   let boxIsOnTarget = false;
@@ -423,7 +424,7 @@ function checkTargetBoxes(){
 
 
 
-initializeScene(1); //initialize scene with map 3
+initializeScene(1); //initialize scene with map 1
 
 
 
