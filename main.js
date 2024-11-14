@@ -509,7 +509,7 @@ function animate() {
                                               
 }
 
-//get and populate map data
+//fetch map data then intialize and begin animating the game
 let mapData; 
 fetch ('./maps.json')
   .then(response => response.json())
