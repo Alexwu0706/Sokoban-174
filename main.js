@@ -492,7 +492,7 @@ function animate() {
         cameraPosition.setFromMatrixPosition(camTransform);
         // lerp is a little janky, makes the camera move upward which I don't like
         // If there is a way to do a smooth movement while keeping the camera's z-position the same it would be better
-        camera.position.lerp(cameraPosition, 0.1);
+        camera.position.lerp(cameraPosition, 0.12);
         if (camera.position.distanceTo(cameraPosition) < 0.01) {
             panLeft = false;
             camLastPos = cameraPosition;
@@ -503,7 +503,7 @@ function animate() {
         camTransform.multiplyMatrices(rotationMatrixY(-90), camTransform);
         let cameraPosition = new THREE.Vector3();
         cameraPosition.setFromMatrixPosition(camTransform);
-        camera.position.lerp(cameraPosition, 0.1);
+        camera.position.lerp(cameraPosition, 0.12);
         if (camera.position.distanceTo(cameraPosition) < 0.01) {
             panRight = false;
             camLastPos = cameraPosition;
