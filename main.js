@@ -230,39 +230,6 @@ function onKeyPress(event) {
     }
 }
 
-///Game maps////////////////////////////////////////////////////////////////
-//Map1
-let Wx_1 = [1,2,3,3,3,2,1,0,0,0,-1,-2,-2,-2,-2,-3,-4,-4,-4,-3,-2,-1,-1,-1,0,1,1,1];
-let Wz_1 = [0,0,0,1,2,2,2,2,3,4,4,4,3,2,1,1,1,0,-1,-1,-1,-1,-2,-3,-3,-3,-2,-1];
-let Bx_1 = [0,-1,-1,1];
-let Bz_1 = [-1,0,1,1];
-let Gx_1 = [0,-2,-1,0,-1,0,1,2,-1];
-let Gz_1 = [-1,0,0,0,1,1,1,1,2];
-let Btx_1 = [-3,0,2,-1];
-let Btz_1 = [0,-2,1,3];
-
-//Map2   <--- This level is impossible lol 
-let Wx_2 = [0,0,-1,-2,-3,-3,-3,-3,-3,-2,-2,-1,0,0,0,1,2,2,2,3,4,4,4,4,3,2,1,1];
-let Wz_2 = [-1,-2,-2,-2,-2,-1,0,1,2,2,3,3,3,4,5,5,5,4,3,3,3,2,1,0,0,0,0,-1];
-let Bx_2 = [0,2,-1];
-let Bz_2 = [2,1,1];
-let Gx_2 = [-2,-1,-1,0,-2,-1,0,1,2,3,0,1,2,3,1];
-let Gz_2 = [-1,-1,0,0,1,1,1,1,1,1,2,2,2,2,4];
-let Btx_2 = [-2,-1,1];
-let Btz_2 = [0,2,3];
-
-//Map3
-let Wx_3 = [1,1,1,1,0,-1,-2,-3,-4,-4,-5,-6,-6,-6,-6,-5,-4,-4,-3,-2,-2,-1,0,1,1,1,1];
-let Wz_3 = [0,1,2,3,3,3,3,2,2,1,1,1,0,-1,-2,-2,-2,-3,-3,-3,-4,-4,-4,-4,-3,-2,-1];
-let Bx_3 = [-1,-1,-2,-3];
-let Bz_3 = [-1,-2,0,-1];
-let Gx_3 = [-2,-1,0,-3,-2,-1,0,-4,-3,-2,-1,0,-3,-2,-1,0,-2,-1,0,-1,0];
-let Gz_3 = [2,2,2,1,1,1,1,0,0,0,0,0,-1,-1,-1,-1,-2,-2,-2,-3,-3];
-let Btx_3 = [-5,-5,-4,-3];
-let Btz_3 = [0,-1,-1,-2];
-
-//Map4
-//Map5
 
 //storing map info 
 let players = []; // array of players
@@ -283,110 +250,102 @@ let boxes_target = []; //boxes target
 let grounds = [];
 let boxes_TargetBB = []; //bounding box of boxes target if all target boxes have a box in contact, then a win is triggered
 
+
+
 //determining which map to display
 function initializeScene(flag){
-  if (flag > 3) flag = 1;
-    if (flag == 1){
-      Wx = Wx_1;
-      Wz = Wz_1;
-      Bx = Bx_1;
-      Bz = Bz_1;
-      Btx = Btx_1;
-      Btz = Btz_1;
-      Gx = Gx_1;
-      Gz = Gz_1;
-    }else if(flag == 2){
-      Wx = Wx_2;
-      Wz = Wz_2;
-      Bx = Bx_2;
-      Bz = Bz_2;
-      Btx = Btx_2;
-      Btz = Btz_2;
-      Gx = Gx_2;
-      Gz = Gz_2;
-    }else if(flag == 3){
-      Wx = Wx_3;
-      Wz = Wz_3;
-      Bx = Bx_3;
-      Bz = Bz_3;
-      Btx = Btx_3;
-      Btz = Btz_3;
-      Gx = Gx_3;
-      Gz = Gz_3;
-    }
-  
-    //add players to the scene
-    for (let i = 0; i < 1; i++) {
-      let player = new THREE.Mesh(custom_cube_geometry, player_material);
-      let playerBB = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3()); //Takes in Far and Near points
-      playerBB.setFromObject(player); //Set the bounding box of the player
-      player.matrixAutoUpdate = false;
-      players.push(player); 
-      playersBB.push(playerBB);
-      scene.add(player);
-    }
-
-    //Initialization
+  if (flag > 3){
+    flag = 1; // reset to first map
+  }
+  const map = mapData[flag - 1];
+  console.log(map,"map inside initializeScene");
 
 
-    //add walls to scene
-    for (let i = 0; i < Wx.length; i++) {
-      let wall = new THREE.Mesh(custom_cube_geometry, wall_material);     //Todo: geometry and material are adjustable (refer to assignment 3)
-      let wallBB = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3()); //Takes in Far and Near points
-      wallBB.setFromObject(wall); //Set the bounding box of the wall
-      wall.matrixAutoUpdate = false;
-      wallsBB.push(wallBB);
-      walls.push(wall);
-      scene.add(wall);     
-    }
-    //add boxes to scene
-    for (let i = 0; i < Bx.length; i++) {
-      let box = new THREE.Mesh(custom_cube_geometry, box_material);
-      let box_target = new THREE.Mesh(custom_cube_geometry, box_material);
-      let boxBB = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
-      let box_TargetBB = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
+  Wx = map.Wx;
+  Wz = map.Wz; 
+  Bx = map.Bx;
+  Bz = map.Bz;  
+  Gx = map.Gx;
+  Gz = map.Gz;
+  Btx = map.Btx;
+  Btz = map.Btz;
 
-      boxBB.setFromObject(box);
-      box_TargetBB.setFromObject(box_target);
-      box.matrixAutoUpdate = false;
-      box_target.matrixAutoUpdate = false;
+  console.log(Wx, "This is the data fetched for walls X")
 
-      boxes.push(box);
-      boxes_target.push(box_target);
-      boxesBB.push(boxBB);
-      boxes_TargetBB.push(box_TargetBB);
+  //add players to the scene
+  for (let i = 0; i < 1; i++) {
+    let player = new THREE.Mesh(custom_cube_geometry, player_material);
+    let playerBB = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3()); //Takes in Far and Near points
+    playerBB.setFromObject(player); //Set the bounding box of the player
+    player.matrixAutoUpdate = false;
+    players.push(player); 
+    console.log(players, "players")
+    console.log(playersBB, "playersBB")
+    playersBB.push(playerBB);
+    scene.add(player);
+  }
 
-      scene.add(box);
-      scene.add(box_target);
-    }
-    //add ground tiles to scene
-    for (let i=0; i< Gx.length; i++){
-      let ground = new THREE.Mesh(custom_cube_geometry, ground_material);
-      ground.matrixAutoUpdate = false;
-      grounds.push(ground);
-      scene.add(ground);
-    }
-    ///Transformation////////////////////////////////////////////////////////////////
+  //Initialization
 
-    //move walls in map to their respective positions
-    for (let i=0; i< Wx.length; i++){
-      walls[i].matrix.multiply(translationMatrix(Wx[i],0,Wz[i]));
-      wallsBB[i].setFromObject(walls[i]);
-    }
-    //move boxes in map to their respective positions
-    for (let i=0; i< Bx.length; i++){
-      boxes[i].matrix.multiply(translationMatrix(Bx[i],0,Bz[i]));;
-      boxes_target[i].matrix.multiply(translationMatrix(Btx[i],-l,Btz[i])).multiply(scalingMatrix(1,1/50,1));
-      boxes_TargetBB[i].setFromObject(boxes_target[i]);
-      boxesBB[i].setFromObject(boxes[i]);
-``    }
-    for (let i=0; i< Gx.length; i++){
-      grounds[i].matrix.multiply(translationMatrix(Gx[i],-l,Gz[i])).multiply(scalingMatrix(1,1/1000,1));
-    }
 
-    //add grid to scene
-    createGrid(walls.length, walls.length);
-    updateTitleText(flag);
+  //add walls to scene
+  for (let i = 0; i < Wx.length; i++) {
+    let wall = new THREE.Mesh(custom_cube_geometry, wall_material);     //Todo: geometry and material are adjustable (refer to assignment 3)
+    let wallBB = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3()); //Takes in Far and Near points
+    wallBB.setFromObject(wall); //Set the bounding box of the wall
+    wall.matrixAutoUpdate = false;
+    wallsBB.push(wallBB);
+    walls.push(wall);
+    scene.add(wall);     
+  }
+  //add boxes to scene
+  for (let i = 0; i < Bx.length; i++) {
+    let box = new THREE.Mesh(custom_cube_geometry, box_material);
+    let box_target = new THREE.Mesh(custom_cube_geometry, box_material);
+    let boxBB = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
+    let box_TargetBB = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
+
+    boxBB.setFromObject(box);
+    box_TargetBB.setFromObject(box_target);
+    box.matrixAutoUpdate = false;
+    box_target.matrixAutoUpdate = false;
+
+    boxes.push(box);
+    boxes_target.push(box_target);
+    boxesBB.push(boxBB);
+    boxes_TargetBB.push(box_TargetBB);
+
+    scene.add(box);
+    scene.add(box_target);
+  }
+  //add ground tiles to scene
+  for (let i=0; i< Gx.length; i++){
+    let ground = new THREE.Mesh(custom_cube_geometry, ground_material);
+    ground.matrixAutoUpdate = false;
+    grounds.push(ground);
+    scene.add(ground);
+  }
+  ///Transformation////////////////////////////////////////////////////////////////
+
+  //move walls in map to their respective positions
+  for (let i=0; i< Wx.length; i++){
+    walls[i].matrix.multiply(translationMatrix(Wx[i],0,Wz[i]));
+    wallsBB[i].setFromObject(walls[i]);
+  }
+  //move boxes in map to their respective positions
+  for (let i=0; i< Bx.length; i++){
+    boxes[i].matrix.multiply(translationMatrix(Bx[i],0,Bz[i]));;
+    boxes_target[i].matrix.multiply(translationMatrix(Btx[i],-l,Btz[i])).multiply(scalingMatrix(1,1/50,1));
+    boxes_TargetBB[i].setFromObject(boxes_target[i]);
+    boxesBB[i].setFromObject(boxes[i]);
+  }
+  for (let i=0; i< Gx.length; i++){
+    grounds[i].matrix.multiply(translationMatrix(Gx[i],-l,Gz[i])).multiply(scalingMatrix(1,1/1000,1));
+  }
+
+  //add grid to scene
+  createGrid(walls.length, walls.length);
+  updateTitleText(flag);
 }
 
 //m x n grid
@@ -423,12 +382,6 @@ function checkTargetBoxes(){
 }
 
 
-
-initializeScene(1); //initialize scene with map 1
-
-
-
-
 ///animation////////////////////////////////////////////////////////////////
 let animation_time = 0;
 let delta_animation_time;
@@ -462,6 +415,7 @@ function animate() {
     }
 
     //update boundary boxes
+    
     playersBB[0].setFromObject(players[0]);
 
 
@@ -541,10 +495,11 @@ function animate() {
 
         //only advance if level cleared
         if (levelCleared){
+          console.log(flag, "flag");
           flag = flag + 1;
           levelCleared = false;
         }
-
+        console.log(walls, boxes);
         resetM = false;
         initializeScene(flag);
     }
@@ -553,6 +508,16 @@ function animate() {
            
                                               
 }
-renderer.setAnimationLoop( animate );
 
-
+//get and populate map data
+let mapData; 
+fetch ('./maps.json')
+  .then(response => response.json())
+  .then(data => {
+    mapData = data; 
+    initializeScene(1); //initialize scene with map 1
+    renderer.setAnimationLoop( animate );
+  })
+  .catch(error => {
+    console.error('Error fetching Maps', error);
+  })
