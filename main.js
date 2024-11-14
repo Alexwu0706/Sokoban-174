@@ -6,15 +6,16 @@ import { updateTitleText } from './utils/textDisplays';
 const scene = new THREE.Scene();
 
 //THREE.PerspectiveCamera( fov angle, aspect ratio, near depth, far depth );
-const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 1000 );
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize( window.innerWidth, window.innerHeight );
 document.body.appendChild( renderer.domElement );
 
 const controls = new OrbitControls(camera, renderer.domElement);
-camera.position.set(0, 10, 2); 
-controls.target.set(0, 5, 0);
+camera.position.set(5, 10, 5); 
+let camLastPos = new THREE.Vector3(5, 10, 5);        // For keeping track of rotation. Not the most elegant
+controls.target.set(0, 0, 0);
 
 // Rendering 3D axis
 const createAxisLine = (color, start, end) => {
@@ -162,6 +163,15 @@ function translationMatrix(tx, ty, tz) {
 	);
 }
 
+function rotationMatrixY(theta) {
+    return new THREE.Matrix4().set(
+        Math.cos(theta), 0, Math.sin(theta), 0,
+        0, 1, 0, 0,
+        -Math.sin(theta), 0, Math.cos(theta), 0,
+        0, 0, 0, 1
+    );
+}
+
 function rotationMatrixZ(theta) {
 	return new THREE.Matrix4().set(
     Math.cos(theta),-1*Math.sin(theta), 0,      0,
@@ -204,6 +214,8 @@ let forward = false;
 let backward = false;
 let right = false;
 let left = false;
+let panLeft = false;
+let panRight = false;
 let resetM = false;
 
 window.addEventListener('keydown', onKeyPress); // onKeyPress is called each time a key is pressed
@@ -222,6 +234,12 @@ function onKeyPress(event) {
         case 'd':
             right = true;          //Translation +1x
             break; 
+        case 'q':
+            panLeft = true;         // Rotate camera counterclockwise
+            break;
+        case 'e':
+            panRight = true;        // Rotate camera clockwise
+            break;
         case 'r':
             resetM = true;
             break;    
@@ -465,7 +483,33 @@ function animate() {
       resetM = true;
       levelCleared = true;
     }
-    
+
+    if (panLeft) {
+        let camTransform = new THREE.Matrix4();
+        camTransform.multiplyMatrices(translationMatrix(camLastPos.x, camLastPos.y, camLastPos.z), camTransform);
+        camTransform.multiplyMatrices(rotationMatrixY(90), camTransform);
+        let cameraPosition = new THREE.Vector3();
+        cameraPosition.setFromMatrixPosition(camTransform);
+        // lerp is a little janky, makes the camera move upward which I don't like
+        // If there is a way to do a smooth movement while keeping the camera's z-position the same it would be better
+        camera.position.lerp(cameraPosition, 0.12);
+        if (camera.position.distanceTo(cameraPosition) < 0.01) {
+            panLeft = false;
+            camLastPos = cameraPosition;
+        }
+    } else if (panRight) {
+        let camTransform = new THREE.Matrix4();
+        camTransform.multiplyMatrices(translationMatrix(camLastPos.x, camLastPos.y, camLastPos.z), camTransform);
+        camTransform.multiplyMatrices(rotationMatrixY(-90), camTransform);
+        let cameraPosition = new THREE.Vector3();
+        cameraPosition.setFromMatrixPosition(camTransform);
+        camera.position.lerp(cameraPosition, 0.12);
+        if (camera.position.distanceTo(cameraPosition) < 0.01) {
+            panRight = false;
+            camLastPos = cameraPosition;
+        }
+    }
+
     //can press r to reset the current level but won't advance to next level
     if (resetM) {
       for (let i = 0; i < Wx.length; i++) {
@@ -505,7 +549,6 @@ function animate() {
     }
 
     //Interaction Implementation
-           
                                               
 }
 
