@@ -13,7 +13,7 @@ renderer.setSize( window.innerWidth, window.innerHeight );
 document.body.appendChild( renderer.domElement );
 
 const controls = new OrbitControls(camera, renderer.domElement);
-camera.position.set(5, 10, 5); 
+camera.position.set(0, 10, 5);  //after demo(5, 10, 5)
 let camLastPos = new THREE.Vector3(5, 10, 5);        // For keeping track of rotation. Not the most elegant
 controls.target.set(0, 0, 0);
 
@@ -26,9 +26,9 @@ const createAxisLine = (color, start, end) => {
 const xAxis = createAxisLine(0xff0000, new THREE.Vector3(0, 0, 0), new THREE.Vector3(3, 0, 0)); // Red
 const yAxis = createAxisLine(0x00ff00, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 3, 0)); // Green
 const zAxis = createAxisLine(0x0000ff, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 3)); // Blue
-scene.add(xAxis);
-scene.add(yAxis);
-scene.add(zAxis);
+// scene.add(xAxis);
+// scene.add(yAxis);
+// scene.add(zAxis);
 
 // Project
 // Setting up the lights
@@ -272,10 +272,12 @@ let boxes_TargetBB = []; //bounding box of boxes target if all target boxes have
 
 //determining which map to display
 function initializeScene(flag){
-  if (flag > 3){
-    flag = 1; // reset to first map
+  flag = flag % 3; 
+  if(flag == 0){
+    flag = 3;
   }
   const map = mapData[flag - 1];
+  console.log(flag);
   console.log(map,"map inside initializeScene");
 
 
@@ -362,7 +364,7 @@ function initializeScene(flag){
   }
 
   //add grid to scene
-  createGrid(walls.length, walls.length);
+  //createGrid(walls.length, walls.length);
   updateTitleText(flag);
 }
 
@@ -484,31 +486,32 @@ function animate() {
       levelCleared = true;
     }
 
-    if (panLeft) {
-        let camTransform = new THREE.Matrix4();
-        camTransform.multiplyMatrices(translationMatrix(camLastPos.x, camLastPos.y, camLastPos.z), camTransform);
-        camTransform.multiplyMatrices(rotationMatrixY(90), camTransform);
-        let cameraPosition = new THREE.Vector3();
-        cameraPosition.setFromMatrixPosition(camTransform);
-        // lerp is a little janky, makes the camera move upward which I don't like
-        // If there is a way to do a smooth movement while keeping the camera's z-position the same it would be better
-        camera.position.lerp(cameraPosition, 0.12);
-        if (camera.position.distanceTo(cameraPosition) < 0.01) {
-            panLeft = false;
-            camLastPos = cameraPosition;
-        }
-    } else if (panRight) {
-        let camTransform = new THREE.Matrix4();
-        camTransform.multiplyMatrices(translationMatrix(camLastPos.x, camLastPos.y, camLastPos.z), camTransform);
-        camTransform.multiplyMatrices(rotationMatrixY(-90), camTransform);
-        let cameraPosition = new THREE.Vector3();
-        cameraPosition.setFromMatrixPosition(camTransform);
-        camera.position.lerp(cameraPosition, 0.12);
-        if (camera.position.distanceTo(cameraPosition) < 0.01) {
-            panRight = false;
-            camLastPos = cameraPosition;
-        }
-    }
+    //camera transition
+    // if (panLeft) {
+    //     let camTransform = new THREE.Matrix4();
+    //     camTransform.multiplyMatrices(translationMatrix(camLastPos.x, camLastPos.y, camLastPos.z), camTransform);
+    //     camTransform.multiplyMatrices(rotationMatrixY(90), camTransform);
+    //     let cameraPosition = new THREE.Vector3();
+    //     cameraPosition.setFromMatrixPosition(camTransform);
+    //     // lerp is a little janky, makes the camera move upward which I don't like
+    //     // If there is a way to do a smooth movement while keeping the camera's z-position the same it would be better
+    //     camera.position.lerp(cameraPosition, 0.12);
+    //     if (camera.position.distanceTo(cameraPosition) < 0.01) {
+    //         panLeft = false;
+    //         camLastPos = cameraPosition;
+    //     }
+    // } else if (panRight) {
+    //     let camTransform = new THREE.Matrix4();
+    //     camTransform.multiplyMatrices(translationMatrix(camLastPos.x, camLastPos.y, camLastPos.z), camTransform);
+    //     camTransform.multiplyMatrices(rotationMatrixY(-90), camTransform);
+    //     let cameraPosition = new THREE.Vector3();
+    //     cameraPosition.setFromMatrixPosition(camTransform);
+    //     camera.position.lerp(cameraPosition, 0.12);
+    //     if (camera.position.distanceTo(cameraPosition) < 0.01) {
+    //         panRight = false;
+    //         camLastPos = cameraPosition;
+    //     }
+    // }
 
     //can press r to reset the current level but won't advance to next level
     if (resetM) {
