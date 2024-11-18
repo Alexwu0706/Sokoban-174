@@ -26,9 +26,9 @@ const createAxisLine = (color, start, end) => {
 const xAxis = createAxisLine(0xff0000, new THREE.Vector3(0, 0, 0), new THREE.Vector3(3, 0, 0)); // Red
 const yAxis = createAxisLine(0x00ff00, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 3, 0)); // Green
 const zAxis = createAxisLine(0x0000ff, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 3)); // Blue
-// scene.add(xAxis);
-// scene.add(yAxis);
-// scene.add(zAxis);
+scene.add(xAxis);
+scene.add(yAxis);
+scene.add(zAxis);
 
 // Project
 // Setting up the lights
@@ -149,10 +149,47 @@ const positions = new Float32Array([
     0, 0, -1,
     0, 0, -1,
   ]);
+
+// Create a Star Shape
+function StarShape(outerRadius, innerRadius, points) {
+  const shape = new THREE.Shape();
+  const angleStep = (Math.PI * 2) / points; // Angle between points
+
+  for (let i = 0; i < points * 2; i++) {
+      const angle = i * angleStep / 2;
+      const radius = i % 2 === 0 ? outerRadius : innerRadius;
+      const x = Math.cos(angle) * radius;
+      const y = Math.sin(angle) * radius;
+
+      if (i === 0) {
+          shape.moveTo(x, y); // Move to the first point
+      } else {
+          shape.lineTo(x, y); // Draw a line to the next point
+      }
+  }
+
+  shape.closePath(); // Close the star shape
+  return shape;
+}
+
+const outerRadius = 0.2;
+const innerRadius = 0.1;
+const points = 5;
+const starShape = StarShape(outerRadius, innerRadius, points);
 const custom_cube_geometry = new THREE.BufferGeometry();
 custom_cube_geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 custom_cube_geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
 custom_cube_geometry.setIndex(new THREE.BufferAttribute(new Uint16Array(indices), 1));
+let playerPA_geometry = new THREE.SphereGeometry(1/4);      //Head
+let playerPB_geometry = new THREE.ConeGeometry(1/3);        //Body
+let playerPC_geometry = new THREE.ConeGeometry(1/8,1/2);    //Hat
+let playerPE_geometry = new THREE.SphereGeometry(1/16);     //L-Hand
+let playerPF_geometry = new THREE.SphereGeometry(1/16);     //R-Hand
+let boxPA_geometry = new THREE.ExtrudeGeometry(starShape, {
+  depth: 0.2, 
+  bevelEnabled: false,  //not to smooth the edge
+});
+let boxPB_geometry = new THREE.SphereGeometry(1/2.5); 
 
 function translationMatrix(tx, ty, tz) {
 	return new THREE.Matrix4().set(
@@ -196,10 +233,43 @@ const wall_material = new THREE.MeshPhongMaterial({
   color: 0x808080, //Gray color
   shininess: 100   
 });
-const player_material = new THREE.MeshPhongMaterial({
-color: 0x00ff00, // Green color
-shininess: 100   
+const playerPA_material = new THREE.MeshPhongMaterial({
+  color: 0xFFFFFF, // Pure white color
+  shininess: 100   
 });
+const playerPB_material = new THREE.MeshPhongMaterial({
+  color: 0x00ff00, // Light blue color
+  shininess: 100   
+});
+const playerPC_material = new THREE.MeshPhongMaterial({
+  color: 0x0000FF, // Deep blue color
+  shininess: 100   
+});
+const playerPD_material = new THREE.MeshPhongMaterial({
+  color: 0x00ff00, // Green color
+  shininess: 100   
+});  
+const playerPE_material = new THREE.MeshPhongMaterial({
+  color: 0xFFFFFF, // Pure white color
+  shininess: 100   
+})
+const playerPF_material = new THREE.MeshPhongMaterial({
+  color: 0xFFFFFF, // Pure white color
+  shininess: 100   
+})
+const boxPA_material = new THREE.MeshPhongMaterial({
+  color: 0xFFAA00, // Pure white color
+  shininess: 100   
+})
+const boxPB_material = new THREE.MeshPhongMaterial({
+  color: 0xFFFFFF, // Pure white color
+  transparent: true, 
+  opacity: 0.3,  
+})
+const boxPC_material = new THREE.MeshPhongMaterial({
+  color: 0xFFFFFF, // Pure white color
+  shininess: 100   
+})
 const box_material = new THREE.MeshPhongMaterial({
   color: 0xffff00, // Yellow color
   shininess: 100   
@@ -268,9 +338,18 @@ let boxes_target = []; //boxes target
 let grounds = [];
 let boxes_TargetBB = []; //bounding box of boxes target if all target boxes have a box in contact, then a win is triggered
 
-
-
 //determining which map to display
+let playerPA_Height = 0.5;
+let playerPB_Height = 0.25;
+let playerPC_Height = 0.9;
+let hat_Width = 0.2;
+let hat_Angle = Math.PI*25/180;  
+let star_Height = 0.3;
+//(hat_Angle , 0, 0); (0, playerPC_Height, hat_Width) forward
+//(-hat_Angle , 0, 0); (0, playerPC_Height, -hat_Width) backward    
+//(0 , 0, hat_Angle); (-hat_Width, playerPC_Height, 0) Right
+//(0 , 0, -hat_Angle); (hat_Width, playerPC_Height, 0) Left
+
 function initializeScene(flag){
   flag = flag % 3; 
   if(flag == 0){
@@ -279,7 +358,6 @@ function initializeScene(flag){
   const map = mapData[flag - 1];
   console.log(flag);
   console.log(map,"map inside initializeScene");
-
 
   Wx = map.Wx;
   Wz = map.Wz; 
@@ -293,24 +371,35 @@ function initializeScene(flag){
   console.log(Wx, "This is the data fetched for walls X")
 
   //add players to the scene
+  
   for (let i = 0; i < 1; i++) {
-    let player = new THREE.Mesh(custom_cube_geometry, player_material);
+    let player = new THREE.Group();
+    let playerPA = new THREE.Mesh(playerPA_geometry,playerPA_material);
+    let playerPB = new THREE.Mesh(playerPB_geometry,playerPB_material);
+    let playerPC = new THREE.Mesh(playerPC_geometry,playerPC_material);
+    let playerPD = new THREE.Mesh(custom_cube_geometry,playerPD_material);
+    playerPA.position.set(0, playerPA_Height, 0); //Head
+    playerPB.position.set(0, playerPB_Height, 0); //Body
+    playerPC.position.set(hat_Width, playerPC_Height, 0); //Hat
+    playerPC.rotation.set(0, 0, -hat_Angle);
+    playerPD.position.set(0,0,0) //Just for Boundary detection, invisible
+    player.add(playerPA);
+    player.add(playerPB);
+    player.add(playerPC);
+    player.add(playerPD);
+    playerPD.visible = false;
+
     let playerBB = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3()); //Takes in Far and Near points
     playerBB.setFromObject(player); //Set the bounding box of the player
     player.matrixAutoUpdate = false;
     players.push(player); 
-    console.log(players, "players")
-    console.log(playersBB, "playersBB")
     playersBB.push(playerBB);
     scene.add(player);
   }
 
-  //Initialization
-
-
   //add walls to scene
   for (let i = 0; i < Wx.length; i++) {
-    let wall = new THREE.Mesh(custom_cube_geometry, wall_material);     //Todo: geometry and material are adjustable (refer to assignment 3)
+    let wall = new THREE.Mesh(custom_cube_geometry, wall_material);
     let wallBB = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3()); //Takes in Far and Near points
     wallBB.setFromObject(wall); //Set the bounding box of the wall
     wall.matrixAutoUpdate = false;
@@ -320,11 +409,21 @@ function initializeScene(flag){
   }
   //add boxes to scene
   for (let i = 0; i < Bx.length; i++) {
-    let box = new THREE.Mesh(custom_cube_geometry, box_material);
+    let box = new THREE.Group();
+    let boxPA = new THREE.Mesh(boxPA_geometry,boxPA_material);       //stars
+    let boxPB = new THREE.Mesh(boxPB_geometry,boxPB_material);       //transparent sphere
+    let boxPC = new THREE.Mesh(custom_cube_geometry,boxPC_material); //Just for Boundary detection, invisible
+    boxPA.position.set(0,star_Height,0);
+    boxPB.position.set(0,star_Height,0);
+    boxPC.position.set(0,0,0); //Just for Boundary detection, invisible
+    box.add(boxPA);
+    box.add(boxPB);
+    box.add(boxPC);
+    boxPC.visible = false;   
     let box_target = new THREE.Mesh(custom_cube_geometry, box_material);
+
     let boxBB = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
     let box_TargetBB = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
-
     boxBB.setFromObject(box);
     box_TargetBB.setFromObject(box_target);
     box.matrixAutoUpdate = false;
@@ -345,7 +444,6 @@ function initializeScene(flag){
     grounds.push(ground);
     scene.add(ground);
   }
-  ///Transformation////////////////////////////////////////////////////////////////
 
   //move walls in map to their respective positions
   for (let i=0; i< Wx.length; i++){
@@ -408,17 +506,42 @@ let delta_animation_time;
 const clock = new THREE.Clock();
 let levelCleared = false;
 let flag = 1; //Map Update
-
+let T_player = 1.5; // Player's floating period in seconds
+let T_boxes = 1; // Boxes's floating period in seconds
 
 function animate() {
   let previousMovement = [0,0]; // x,z movement
 	renderer.render( scene, camera );
     controls.update();
-    
+    delta_animation_time = clock.getDelta();
+    animation_time += delta_animation_time; 
+
+    //Player Self-Motion
+    let floating_player = 0.15*Math.sin(animation_time*2*Math.PI/T_player+Math.PI/2);
+    players[0].children[0].position.y = floating_player + playerPA_Height; 
+    players[0].children[1].position.y = floating_player + playerPB_Height; 
+    players[0].children[2].position.y = floating_player + playerPC_Height; 
+    //(hat_Angle , 0, 0); (0, playerPC_Height, hat_Width) forward
+    //(-hat_Angle , 0, 0); (0, playerPC_Height, -hat_Width) backward    
+    //(0 , 0, hat_Angle); (-hat_Width, playerPC_Height, 0) Right
+    //(0 , 0, -hat_Angle); (hat_Width, playerPC_Height, 0) Left
+
+    //Box Self-Motion
+    let floating_boxes = 0.2*Math.sin(animation_time*2*Math.PI/T_boxes+Math.PI/2);
+    for(let i = 0; i < Bx.length; i++){
+      boxes[i].children[0].position.y = floating_boxes + star_Height;
+      //boxes[i].children[1].position.y = floating_boxes + star_Height;
+      boxes[i].children[0].rotation.x = animation_time;
+      boxes[i].children[0].rotation.y = animation_time;
+      //boxes[i].children[0].rotation.z = animation_time;
+    }
+
     //Player Motion (could maybe set delay to prevent player from moving too fast or hold key down)
     if(forward){
       players[0].matrix.multiply(translationMatrix(0,0,-1));
       previousMovement = [0,-1];
+      // players[0].children[2].position.z = hat_Width;
+      // players[0].children[2].rotation.x = hat_Angle;
       forward = false;
     }else if(backward){
       players[0].matrix.multiply(translationMatrix(0,0,1));
@@ -435,11 +558,7 @@ function animate() {
     }
 
     //update boundary boxes
-    
     playersBB[0].setFromObject(players[0]);
-
-
-    //collision detections////////////////////////////////////////////
 
     //do not let player move through walls
     for (let i = 0; i < wallsBB.length; i++){
