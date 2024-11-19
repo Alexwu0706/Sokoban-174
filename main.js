@@ -504,6 +504,42 @@ function checkTargetBoxes(){
  * 2. The player will go back to origin and rotate about origin in the direction of movement
  */
 
+//return float rounded to 1 decimal place
+function roundFloatOne(value) {
+  return parseFloat(value.toFixed(1));
+}
+
+function roundBoundingBox(boundingBox) {
+  boundingBox.min.set(
+      roundFloatOne(boundingBox.min.x),
+      roundFloatOne(boundingBox.min.y),
+      roundFloatOne(boundingBox.min.z)
+  );
+  boundingBox.max.set(
+      roundFloatOne(boundingBox.max.x),
+      roundFloatOne(boundingBox.max.y),
+      roundFloatOne(boundingBox.max.z)
+  );
+  return boundingBox;
+}
+
+//rotates about origin and translates the player back to position
+//update the matrix of the playerObj and return it
+function rotateAboutOrigin(previousRotation, rotationAngle, playerObj) {
+  // Extract the player's current position
+  let playerPos = new THREE.Vector3();
+  playerObj.matrix.decompose(playerPos, new THREE.Quaternion(), new THREE.Vector3());
+
+  // Return to origin facing the front direction
+  playerObj.matrix.multiply(translationMatrix(-playerPos.x, 0, -playerPos.z));
+  playerObj.matrix.multiply(rotationMatrixY(-previousRotation));
+
+  // Rotate about origin and translate back to position
+  playerObj.matrix.multiply(rotationMatrixY(rotationAngle));
+  playerObj.matrix.multiply(translationMatrix(playerPos.x, 0, playerPos.z));
+
+  return playerObj;
+}
 
 const rotationAngles = {
   "forward" : 0,  
@@ -551,13 +587,10 @@ function animate() {
 
     //Player Motion (could maybe set delay to prevent player from moving too fast or hold key down)
     if(forward){
-      players[0].matrix.multiply(rotationMatrixY(-previousDirection));
-      players[0].matrix.multiply(rotationMatrixY(rotationAngles["forward"]));
+      players[0] = rotateAboutOrigin(previousDirection, rotationAngles["forward"], players[0]);
       players[0].matrix.multiply(translationMatrix(0,0,-1));
       previousDirection = rotationAngles["forward"];
       previousMovement = [0,-1];
-      // players[0].children[2].position.z = hat_Width;
-      // players[0].children[2].rotation.x = hat_Angle;
       forward = false;
     }else if(backward){
       players[0].matrix.multiply(rotationMatrixY(-previousDirection));
@@ -583,11 +616,13 @@ function animate() {
     }
     //update boundary boxes
     playersBB[0].setFromObject(players[0]);
-    console.log(playersBB[0].min, playersBB[0].max, "playerBB");
+    playersBB[0] = roundBoundingBox(playersBB[0]);
+
     //do not let player move through walls
     for (let i = 0; i < wallsBB.length; i++){
       if (collisionCheck(playersBB[0],wallsBB[i])){
         players[0].matrix.multiply(translationMatrix(-previousMovement[0],0,-previousMovement[1]));
+        console.log("collision with wall");
       }
     }
     //player can push boxes
@@ -682,6 +717,8 @@ function animate() {
         grounds.length = 0;
         players.length = 0;
         playersBB.length = 0;
+        previousDirection = 0; 
+        previousMovement = [0,0];
 
         //only advance if level cleared
         if (levelCleared){
