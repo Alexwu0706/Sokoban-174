@@ -498,7 +498,19 @@ function checkTargetBoxes(){
   return boxesOnTargets
 
 }
+// To implement direction: 
+/**
+ * 1. Face the player in the direction of movement
+ * 2. The player will go back to origin and rotate about origin in the direction of movement
+ */
 
+
+const rotationAngles = {
+  "forward" : 0,  
+  "backward": Math.PI,
+  "right": -Math.PI/2,
+  "left": Math.PI/2
+}
 
 ///animation////////////////////////////////////////////////////////////////
 let animation_time = 0;
@@ -508,6 +520,7 @@ let levelCleared = false;
 let flag = 1; //Map Update
 let T_player = 1.5; // Player's floating period in seconds
 let T_boxes = 1; // Boxes's floating period in seconds
+let previousDirection = 0;
 
 function animate() {
   let previousMovement = [0,0]; // x,z movement
@@ -538,28 +551,39 @@ function animate() {
 
     //Player Motion (could maybe set delay to prevent player from moving too fast or hold key down)
     if(forward){
+      players[0].matrix.multiply(rotationMatrixY(-previousDirection));
+      players[0].matrix.multiply(rotationMatrixY(rotationAngles["forward"]));
       players[0].matrix.multiply(translationMatrix(0,0,-1));
+      previousDirection = rotationAngles["forward"];
       previousMovement = [0,-1];
       // players[0].children[2].position.z = hat_Width;
       // players[0].children[2].rotation.x = hat_Angle;
       forward = false;
     }else if(backward){
-      players[0].matrix.multiply(translationMatrix(0,0,1));
+      players[0].matrix.multiply(rotationMatrixY(-previousDirection));
+      players[0].matrix.multiply(rotationMatrixY(rotationAngles["backward"]));
+      players[0].matrix.multiply(translationMatrix(0,0,-1));
+      previousDirection = rotationAngles["backward"];
       previousMovement = [0,1];
       backward = false;
     }else if(right){
-      players[0].matrix.multiply(translationMatrix(1,0,0));
+      players[0].matrix.multiply(rotationMatrixY(-previousDirection));
+      players[0].matrix.multiply(rotationMatrixY(rotationAngles["right"]));
+      players[0].matrix.multiply(translationMatrix(0,0,-1));
+      previousDirection = rotationAngles["right"];
       previousMovement = [1,0];
       right = false;
     }else if(left){
-      players[0].matrix.multiply(translationMatrix(-1,0,0));
+      players[0].matrix.multiply(rotationMatrixY(-previousDirection));
+      players[0].matrix.multiply(rotationMatrixY(rotationAngles["left"]));
+      players[0].matrix.multiply(translationMatrix(0,0,-1));
+      previousDirection = rotationAngles["left"];
       previousMovement = [-1,0];
       left = false;
     }
-
     //update boundary boxes
     playersBB[0].setFromObject(players[0]);
-
+    console.log(playersBB[0].min, playersBB[0].max, "playerBB");
     //do not let player move through walls
     for (let i = 0; i < wallsBB.length; i++){
       if (collisionCheck(playersBB[0],wallsBB[i])){
