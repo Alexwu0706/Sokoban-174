@@ -374,7 +374,8 @@ function initializeScene(flag){
  console.log(Wx, "This is the data fetched for walls X")
 
  //add players to the scene
- 
+ playerPosition.set(0,0,0); //Initial position of player
+ playerRotationY = 0; //Initial rotation of player
  for (let i = 0; i < 1; i++) {
  let player = new THREE.Group();
  let playerPA = new THREE.Mesh(playerPA_geometry,playerPA_material);
@@ -391,6 +392,8 @@ function initializeScene(flag){
  player.add(playerPC);
  player.add(playerPD);
  playerPD.visible = false;
+ player.position.set(0,0,0);
+
 
  let playerBB = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3()); //Takes in Far and Near points
  playerBB.setFromObject(player); //Set the bounding box of the player
@@ -543,7 +546,7 @@ function animate() {
  if(forward){
   // players[0].matrix.multiply(translationMatrix(0,0,-1));
   playerPosition.z -= 1;
-  playerRotationY = 0;
+  playerRotationY = -Math.PI / 2;
   previousMovement = [0,-1];
   // players[0].children[2].position.z = hat_Width;
   // players[0].children[2].rotation.x = hat_Angle;
@@ -551,19 +554,19 @@ function animate() {
  }else if(backward){
   // players[0].matrix.multiply(translationMatrix(0,0,1));
   playerPosition.z += 1;
-  playerRotationY = Math.PI;
+  playerRotationY = Math.PI / 2;
   previousMovement = [0,1];
   backward = false;
  }else if(right){
   // players[0].matrix.multiply(translationMatrix(1,0,0));
   playerPosition.x += 1;
-  playerRotationY = Math.PI / 2;
+  playerRotationY = Math.PI;
   previousMovement = [1,0];
   right = false;
  }else if(left){
   // players[0].matrix.multiply(translationMatrix(-1,0,0));
   playerPosition.x -= 1;
-  playerRotationY = -Math.PI / 2;
+  playerRotationY = 0;
   previousMovement = [-1,0];
   left = false;
  }
