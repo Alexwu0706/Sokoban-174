@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { collisionCheck } from './utils/collisionCheck';
+import { boundingBoxCollisionCheck, playerCollisionCheck } from './utils/collisionCheck';
 import { updateTitleText } from './utils/textDisplays';
 
 const scene = new THREE.Scene();
@@ -491,7 +491,7 @@ function checkTargetBoxes(){
   boxes_TargetBB[i].setFromObject(boxes_target[i]);
  for (let j = 0; j < boxesBB.length; j++){
  //if there is a collision with any box update count
-  if (collisionCheck(boxesBB[j],boxes_TargetBB[i])){
+  if (boundingBoxCollisionCheck(boxesBB[j],boxes_TargetBB[i])){
     boxIsOnTarget = true;
   } 
  }
@@ -515,12 +515,16 @@ let flag = 1; //Map Update
 let T_player = 1.5; // Player's floating period in seconds
 let T_boxes = 1; // Boxes's floating period in seconds
 
+
+
+
 function animate() {
  let previousMovement = [0,0]; // x,z movement
  renderer.render( scene, camera );
  controls.update();
  delta_animation_time = clock.getDelta();
  animation_time += delta_animation_time; 
+ 
 
  //Player Self-Motion
  let floating_player = 0.15*Math.sin(animation_time*2*Math.PI/T_player+Math.PI/2);
@@ -542,6 +546,7 @@ function animate() {
  //boxes[i].children[0].rotation.z = animation_time;
  }
 
+
  //Player Motion (could maybe set delay to prevent player from moving too fast or hold key down)
  if(forward){
   // players[0].matrix.multiply(translationMatrix(0,0,-1));
@@ -557,69 +562,76 @@ function animate() {
   playerRotationY = Math.PI / 2;
   previousMovement = [0,1];
   backward = false;
+  
  }else if(right){
   // players[0].matrix.multiply(translationMatrix(1,0,0));
   playerPosition.x += 1;
   playerRotationY = Math.PI;
   previousMovement = [1,0];
   right = false;
+
  }else if(left){
   // players[0].matrix.multiply(translationMatrix(-1,0,0));
   playerPosition.x -= 1;
   playerRotationY = 0;
   previousMovement = [-1,0];
   left = false;
+
  }
- 
+
+ //check if newPlayerPos lies within bounding box of wallsBB
+
+ for (let i = 0; i < wallsBB.length; i++){
+  if (playerCollisionCheck(playerPosition,wallsBB[i])){
+    //go back to previous position
+    playerPosition.x -= previousMovement[0];
+    playerPosition.z -= previousMovement[1];
+  }
+ }
+
+ //check if player colliding with Box that can't be pushed
+ for (let i = 0; i < boxesBB.length; i++){
+  //check if player can move box
+  if (playerCollisionCheck(playerPosition,boxesBB[i])){
+
+    boxes[i].matrix.multiply(translationMatrix(previousMovement[0],0,previousMovement[1]));
+    boxesBB[i].setFromObject(boxes[i]);
+    //box cannot move into wall 
+    for (let j = 0; j < wallsBB.length; j++){
+      if (boundingBoxCollisionCheck(boxesBB[i],wallsBB[j])){
+        playerPosition.x -= previousMovement[0];
+        playerPosition.z -= previousMovement[1];
+
+        //move boxes back
+        boxes[i].matrix.multiply(translationMatrix(-previousMovement[0],0,-previousMovement[1]));
+        boxesBB[i].setFromObject(boxes[i]);
+      }
+    }
+    //box cannot move into another box
+    for (let k = 0; k < boxesBB.length; k++){
+      if (i != k && boundingBoxCollisionCheck(boxesBB[i],boxesBB[k])){
+        playerPosition.x -= previousMovement[0];
+        playerPosition.z -= previousMovement[1];
+
+        //move boxes back
+        boxes[i].matrix.multiply(translationMatrix(-previousMovement[0],0,-previousMovement[1]));
+        boxesBB[i].setFromObject(boxes[i]);
+      }
+    }
+    //box moves before player to prevent player from moving through box
+  } 
+
+ }
+
  players[0].position.copy(playerPosition);
  players[0].rotation.y = playerRotationY;
 
  //update boundary boxes
  playersBB[0].setFromObject(players[0]);
 
- //do not let player move through walls
- for (let i = 0; i < wallsBB.length; i++){
-  if (collisionCheck(playersBB[0],wallsBB[i])){
-  // players[0].matrix.multiply(translationMatrix(-previousMovement[0],0,-previousMovement[1]));
-    playerPosition.x -= previousMovement[0];
-    playerPosition.z -= previousMovement[1];
-  }
- }
- //player can push boxes
- //cannot push 2 boxes at once
+
  //boxes cannot push through walls
- for (let i = 0; i < boxesBB.length; i++){
-  if (collisionCheck(playersBB[0], boxesBB[i])){
-    //intial move forward
-    boxes[i].matrix.multiply(translationMatrix(previousMovement[0],0,previousMovement[1])); 
-    boxesBB[i].setFromObject(boxes[i]);
-    //move back if collision with wall
-    for (let j = 0; j < wallsBB.length; j++){
-      if (collisionCheck(boxesBB[i],wallsBB[j])){
-        boxes[i].matrix.multiply(translationMatrix(-previousMovement[0],0,-previousMovement[1]));
-        boxesBB[i].setFromObject(boxes[i]);
-      }
-    }
-  //move back if collision with another box
-  //j is the other boxes
-  for (let j = 0; j < boxesBB.length; j++){
-    if (i != j && collisionCheck(boxesBB[i],boxesBB[j])){
-      boxes[i].matrix.multiply(translationMatrix(-previousMovement[0],0,-previousMovement[1]));
-      boxesBB[i].setFromObject(boxes[i]);
-    }
-  }
- //check if boxes are on target
- 
-  }
-}
- //do not let player move through boxes
- for (let i = 0; i < boxesBB.length; i++){
-  if (collisionCheck(playersBB[0],boxesBB[i])){
-    // players[0].matrix.multiply(translationMatrix(-previousMovement[0],0,-previousMovement[1]));
-    playerPosition.x -= previousMovement[0];
-    playerPosition.z -= previousMovement[1];
-  }
- }
+
  //all boxes are on targets
  if (checkTargetBoxes() == boxes_target.length){
   resetM = true;
