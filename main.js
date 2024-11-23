@@ -709,7 +709,8 @@ function animate() {
 
 //fetch map data then intialize and begin animating the game
 let mapData; 
-fetch ('./maps.json')
+function startGame(){
+  fetch ('./maps.json')
  .then(response => response.json())
  .then(data => {
  mapData = data; 
@@ -719,3 +720,11 @@ fetch ('./maps.json')
  .catch(error => {
  console.error('Error fetching Maps', error);
  })
+}
+
+//check for start game button press
+document.getElementById('start-button').addEventListener('click', () => {
+  document.getElementById('homepage').style.display = 'none';
+  document.getElementById('game-container').style.display = 'block';
+  startGame();
+});
