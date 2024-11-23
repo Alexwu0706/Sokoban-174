@@ -2,7 +2,18 @@ import * as THREE from 'three';
 
 
 //takes in player and an object to check for collision return true or false
-export function collisionCheck(movingBB, objectBB) {
+export function playerCollisionCheck(newPos, objectBB) {
+    const maxX = objectBB.max.x;
+    const minX = objectBB.min.x;
+    const minZ = objectBB.min.z;
+    const maxZ = objectBB.max.z;
+
+    if (newPos.x < maxX && newPos.x > minX && newPos.z < maxZ && newPos.z > minZ) {
+        return true;
+    }
+}
+
+export function boundingBoxCollisionCheck(movingBB, objectBB) {
     if (movingBB.containsBox(objectBB)) {
         return true;
     }
