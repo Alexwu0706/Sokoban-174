@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { boundingBoxCollisionCheck, playerCollisionCheck } from './utils/collisionCheck';
 import { updateTitleText } from './utils/textDisplays';
+import { createHomePage, setupClickDetection } from './utils/homePage';
 
 const scene = new THREE.Scene();
 
@@ -139,6 +140,12 @@ const positions = new Float32Array([
  0, 0, -1,
  0, 0, -1,
  ]);
+
+//game states
+
+let gameStart = false; 
+let expandedHomepage = false;
+
 
 // Create a Star Shape
 function StarShape(outerRadius, innerRadius, points) {
@@ -289,35 +296,45 @@ let panLeft = false;
 let panRight = false;
 let resetM = false;
 
+
+let homePage = createHomePage(scene);
+scene.add(homePage);
+
+
+//only allow player to move if game starts
+
 window.addEventListener('keydown', onKeyPress); // onKeyPress is called each time a key is pressed
-// Function to handle keypress
+setupClickDetection(camera, homePage)
 function onKeyPress(event) {
-  switch (event.key) {
-  case 'w': 
-  forward = true; //Translation +1z
-  break;
-  case 'a':
-  left = true; //Translation -1x
-  break;
-  case 's':
-  backward = true; //Translation -1z
-  break; 
-  case 'd':
-  right = true; //Translation +1x
-  break; 
-  case 'q':
-  panLeft = true; // Rotate camera counterclockwise
-  break;
-  case 'e':
-  panRight = true; // Rotate camera clockwise
-  break;
-  case 'r':
-  resetM = true;
-  break; 
-  default:
-  console.log(`Key ${event.key} pressed`);
- }
+  if(gameStart){
+    switch (event.key) {
+      case 'w': 
+      forward = true; //Translation +1z
+      break;
+      case 'a':
+      left = true; //Translation -1x
+      break;
+      case 's':
+      backward = true; //Translation -1z
+      break; 
+      case 'd':
+      right = true; //Translation +1x
+      break; 
+      case 'q':
+      panLeft = true; // Rotate camera counterclockwise
+      break;
+      case 'e':
+      panRight = true; // Rotate camera clockwise
+      break;
+      case 'r':
+      resetM = true;
+      break; 
+      default:
+      console.log(`Key ${event.key} pressed`);
+     }
+  }
 }
+
 
 
 //storing map info 
@@ -368,12 +385,12 @@ function initializeScene(flag){
  Gz = map.Gz;
  Btx = map.Btx;
  Btz = map.Btz;
-
-    console.log(Wx, "This is the data fetched for walls X");
+ 
+ console.log(Wx, "This is the data fetched for walls X");
 
  // Add skybox to scene
-    let skybox = new THREE.Mesh(sky_geometry, sky_material);
-    scene.add(skybox);
+ let skybox = new THREE.Mesh(sky_geometry, sky_material);
+ scene.add(skybox);
 
  //add players to the scene
  playerPosition.set(0,0,0); //Initial position of player
@@ -482,6 +499,8 @@ function createGrid(m,n){
  scene.add(grid);
 }
 
+
+
 //translate target boxes l up and check for collision with boxes
 //check if all boxes are on their targets
 function checkTargetBoxes(){
@@ -527,6 +546,24 @@ function animate() {
  delta_animation_time = clock.getDelta();
  animation_time += delta_animation_time; 
  
+ // Make the homepage always in front of the camera
+ if (!gameStart && homePage) {
+  const distanceFromCamera = 10; 
+  const cameraDirection = new THREE.Vector3();
+
+  // Get the direction the camera is facing
+  camera.getWorldDirection(cameraDirection);
+
+  // Calculate the target position directly in front of the camera
+  const targetPosition = new THREE.Vector3()
+    .copy(camera.position)
+    .add(cameraDirection.multiplyScalar(distanceFromCamera));
+
+  // Update the homePage position smoothly (lerp for smooth transition)
+  homePage.position.copy(targetPosition);
+  // Ensure the homePage always faces the camera
+  homePage.lookAt(camera.position);
+}
 
  //Player Self-Motion
  let floating_player = 0.15*Math.sin(animation_time*2*Math.PI/T_player+Math.PI/2);
