@@ -192,7 +192,8 @@ let boxPA_geometry = new THREE.ExtrudeGeometry(starShape, {
  depth: 0.2, 
  bevelEnabled: false, //not to smooth the edge
 });
-let boxPB_geometry = new THREE.SphereGeometry(1/2.5); 
+let boxPB_geometry = new THREE.SphereGeometry(1 / 2.5); 
+let sky_geometry = new THREE.SphereGeometry(100);
 
 function translationMatrix(tx, ty, tz) {
  return new THREE.Matrix4().set(
@@ -230,6 +231,8 @@ function scalingMatrix(sx, sy, sz) {
  );
 }
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+// Shaders
 
 ///Initialization////////////////////////////////////////////////////////////////
 const wall_material = new THREE.MeshPhongMaterial({
@@ -280,6 +283,11 @@ const box_material = new THREE.MeshPhongMaterial({
 const ground_material = new THREE.MeshPhongMaterial({
  color: 0xffffff, // White color
  shininess: 100 
+});
+const sky_texture = new THREE.TextureLoader().load('assets/finalproj_skybox_top_TEMP.png');
+const sky_material = new THREE.MeshStandardMaterial({
+    map: sky_texture,
+    side: THREE.BackSide
 });
 
 /////Interaction (Player Motion; Boxes-players interaction; Boxes-Boxes interaction)///////////////////////////
@@ -371,7 +379,10 @@ function initializeScene(flag){
  Btx = map.Btx;
  Btz = map.Btz;
 
- console.log(Wx, "This is the data fetched for walls X")
+    console.log(Wx, "This is the data fetched for walls X");
+
+ // Add skybox to scene
+ let skybox = new THREE.Mesh(sky_geometry, sky_material);
 
  //add players to the scene
  playerPosition.set(0,0,0); //Initial position of player
