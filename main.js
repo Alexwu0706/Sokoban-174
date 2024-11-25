@@ -20,19 +20,6 @@ controls.target.set(0, 0, 0);
 let playerPosition = new THREE.Vector3(0, 0, 0);
 let playerRotationY = 0;
 
-// Rendering 3D axis
-const createAxisLine = (color, start, end) => {
- const geometry = new THREE.BufferGeometry().setFromPoints([start, end]);
- const material = new THREE.LineBasicMaterial({ color: color });
- return new THREE.Line(geometry, material);
-};
-const xAxis = createAxisLine(0xff0000, new THREE.Vector3(0, 0, 0), new THREE.Vector3(3, 0, 0)); // Red
-const yAxis = createAxisLine(0x00ff00, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 3, 0)); // Green
-const zAxis = createAxisLine(0x0000ff, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 3)); // Blue
-scene.add(xAxis);
-scene.add(yAxis);
-scene.add(zAxis);
-
 // Project
 // Setting up the lights
 const pointLight = new THREE.PointLight(0xffffff, 100, 100);
@@ -192,7 +179,8 @@ let boxPA_geometry = new THREE.ExtrudeGeometry(starShape, {
  depth: 0.2, 
  bevelEnabled: false, //not to smooth the edge
 });
-let boxPB_geometry = new THREE.SphereGeometry(1/2.5); 
+let boxPB_geometry = new THREE.SphereGeometry(1 / 2.5); 
+let sky_geometry = new THREE.BoxGeometry(50, 50, 50);
 
 function translationMatrix(tx, ty, tz) {
  return new THREE.Matrix4().set(
@@ -230,6 +218,8 @@ function scalingMatrix(sx, sy, sz) {
  );
 }
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+// Shaders
 
 ///Initialization////////////////////////////////////////////////////////////////
 const wall_material = new THREE.MeshPhongMaterial({
@@ -280,6 +270,14 @@ const box_material = new THREE.MeshPhongMaterial({
 const ground_material = new THREE.MeshPhongMaterial({
  color: 0xffffff, // White color
  shininess: 100 
+});
+// skybox texture needs modification
+const sky_texture = new THREE.TextureLoader().load('assets/finalproj_skybox_top_TEMP.png');
+sky_texture.wrapS = THREE.RepeatWrapping;
+sky_texture.wrapT = THREE.RepeatWrapping;
+const sky_material = new THREE.MeshStandardMaterial({
+    map: sky_texture,
+    side: THREE.BackSide
 });
 
 /////Interaction (Player Motion; Boxes-players interaction; Boxes-Boxes interaction)///////////////////////////
@@ -371,7 +369,11 @@ function initializeScene(flag){
  Btx = map.Btx;
  Btz = map.Btz;
 
- console.log(Wx, "This is the data fetched for walls X")
+    console.log(Wx, "This is the data fetched for walls X");
+
+ // Add skybox to scene
+    let skybox = new THREE.Mesh(sky_geometry, sky_material);
+    scene.add(skybox);
 
  //add players to the scene
  playerPosition.set(0,0,0); //Initial position of player
