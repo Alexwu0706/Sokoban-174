@@ -298,7 +298,7 @@ let panRight = false;
 let resetM = false;
 
 
-let homePage = createHomePage(scene);
+let homePage = createHomePage();
 scene.add(homePage);
 
 

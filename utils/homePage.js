@@ -117,7 +117,19 @@ const imageMaterial = new THREE.ShaderMaterial({
     transparent: true
 })
 
-export function createHomePage(scene){
+
+const buttonShader = new BillBoardShader();
+const buttonMaterial = new THREE.ShaderMaterial({
+    uniforms: buttonUniforms,
+    vertexShader: buttonShader.vertexShader(),
+    fragmentShader: buttonShader.fragmentShader(),
+    transparent: true
+});
+
+let titleMesh;
+
+
+export function createHomePage(){
 
     const loader = new FontLoader();
     loader.load('./assets/font.typeface.json', (font) => {
@@ -125,19 +137,20 @@ export function createHomePage(scene){
         const textGeometry = new TextGeometry(TITLE, {
             font: font,
             size: 0.5,    // Font size
-            height: 0.2,  // Depth of the text
+            depth: 0.2,  // Depth of the text
             curveSegments: 12, // Curve quality
             bevelEnabled: true, // Optional beveling
             bevelThickness: 0.03,
             bevelSize: 0.02,
         });
         const textMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
-        const textMesh = new THREE.Mesh(textGeometry, textMaterial);
-        textMesh.position.set(0,2,0.01)
-        centerText(textMesh, billboardMesh);
-        textMesh.position.y += 2;
-        textMesh.name = 'title';
-        homePage.add(textMesh);
+        titleMesh = new THREE.Mesh(textGeometry, textMaterial);
+        titleMesh.position.set(0, 2, 0.01);
+        centerText(titleMesh, billboardMesh);
+        titleMesh.position.y += 2;
+        titleMesh.name = 'title';
+        homePage.add(titleMesh);
+        console.log('added title');
     });
 
     //create buttons
@@ -161,7 +174,7 @@ function createButton(text, onClick){
         const textGeometry = new TextGeometry(text, {
             font: font,
             size: 0.3,    // Font size
-            height: 0.2,  // Depth of the text
+            depth: 0.1,  // Depth of the text
             curveSegments: 12, // Curve quality
             bevelEnabled: true, // Optional beveling
             bevelThickness: 0.03,
@@ -175,13 +188,6 @@ function createButton(text, onClick){
         //create button background to be wider than text
         const textBox = new THREE.Box3().setFromObject(textMesh);
         const buttonBG = new THREE.PlaneGeometry(textBox.max.x - textBox.min.x + 0.5, textBox.max.y - textBox.min.y + 0.5);
-        const buttonShader = new BillBoardShader();
-        const buttonMaterial = new THREE.ShaderMaterial({
-            uniforms: buttonUniforms,
-            vertexShader: buttonShader.vertexShader(),
-            fragmentShader: buttonShader.fragmentShader(),
-            transparent: true
-        });
         const buttonMesh = new THREE.Mesh(buttonBG, buttonMaterial);
         buttonMesh.name = text + "BG"
         //center text on button
@@ -244,6 +250,12 @@ export function setupClickDetection(camera, billboard) {
                     expandHomePage();
                     eventTrigger('Instructions');
                     break;
+                case 'Go BackButton':
+                    goBackToMenu();
+                    break;
+                case 'Go BackBG':
+                    goBackToMenu();
+                    break;
                 default:
                     console.log(clickedObject)
             }
@@ -297,10 +309,10 @@ function populateInstructions() {
 
     const loader = new FontLoader();
     loader.load('./assets/font.typeface.json', (font) => {
-        const instructionsText = new TextGeometry('Instructions :', {
+        const instructionsText = new TextGeometry('Instructions :\nW,A,S,D to move \nR to reset level \nQ or E to change camera angle\nMove all stars to targets\ngood luck !', {
             font: font,
             size: 0.3,
-            height: 0.2,
+            depth: 0.1,
             curveSegments: 12,
             bevelEnabled: true,
             bevelThickness: 0.03,
@@ -311,7 +323,7 @@ function populateInstructions() {
         textMesh.position.set(0, 2, 0.01);
         //positioning text
         centerText(textMesh, billboardMesh);
-        textMesh.position.y += 3
+        textMesh.position.y += 4
 
         //scaling billboard
         billboardMesh.scale.set(3,2,2);
@@ -320,7 +332,7 @@ function populateInstructions() {
         homePage.add(textMesh);
     });
     //button to go back 
-    const backButton = createButton('Back', eventTrigger('Back'));
+    const backButton = createButton('Go Back', goBackToMenu);
     
     //load images of instructions
     const pushingBoxCanvas = new THREE.PlaneGeometry(5,3); 
@@ -329,9 +341,15 @@ function populateInstructions() {
 
     homePage.add(pushingBoxImgMesh);
     pushingBoxImgMesh.position.z += 0.01
-
+    pushingBoxImgMesh.position.y -= 1;
     backButton.position.y -= 3;
     homePage.add(backButton);
 }
 
-
+function goBackToMenu(){
+    homePage.clear();
+    billboardMesh.scale.set(1,1,1);
+    createHomePage();
+    //for some reason title did not reappear
+    homePage.add(titleMesh)
+}
