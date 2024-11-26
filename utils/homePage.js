@@ -346,6 +346,7 @@ function populateInstructions() {
     homePage.add(backButton);
 }
 
+//there is still a bug where the title does not appear
 //navigating from instructions to menu
 function goBackToMenu(){
     homePage.clear();
