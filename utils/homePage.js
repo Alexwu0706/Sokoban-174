@@ -45,6 +45,44 @@ class BillBoardShader {
     }
 }
 
+class ImageShader {
+    vertexShader() {
+        return `
+            varying vec2 vUv;
+            void main() {
+                vUv = uv;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+        `;
+    }
+
+    fragmentShader() {
+        return `
+            uniform sampler2D uTexture;
+            uniform float borderRadius;
+            uniform float opacity;
+            varying vec2 vUv;
+
+            void main() {
+                vec4 texColor = texture2D(uTexture, vUv);
+                float radius = borderRadius;
+                vec2 uv = vUv * 2.0 - 1.0;
+                float dist = length(max(abs(uv) - vec2(1.0 - radius), 0.0)) - radius;
+                float alpha = smoothstep(0.01, 0.02, -dist);
+                gl_FragColor = vec4(texColor.rgb, texColor.a * opacity * alpha);
+            }
+        `;
+    }
+}
+
+const pushingBoxImg = new THREE.TextureLoader().load('./assets/boxPush.png');
+
+const imageUniforms = {
+    uTexture: { value: pushingBoxImg },
+    borderRadius: { value: 0.1 },
+    opacity: { value: 1.0 }
+};
+
 const billBoardUniforms = {
     color: { value: new THREE.Color(0x808080) }, // White color
     borderRadius: { value: 0.1 }, 
@@ -58,6 +96,7 @@ const buttonUniforms = {
 }
 
 const homePage = new THREE.Group();
+const clock = new THREE.Clock();
 
 const billboardGeometry = new THREE.PlaneGeometry(6, 6);
 const billBoardMatShader = new BillBoardShader();
@@ -70,6 +109,13 @@ const billboardMaterial = new THREE.ShaderMaterial({
 const billboardMesh = new THREE.Mesh(billboardGeometry, billboardMaterial);
 billboardMesh.position.set(0, 0, 0);
 
+const imageShader = new ImageShader();
+const imageMaterial = new THREE.ShaderMaterial({
+    uniforms: imageUniforms,
+    vertexShader: imageShader.vertexShader(),
+    fragmentShader: imageShader.fragmentShader(),
+    transparent: true
+})
 
 export function createHomePage(scene){
 
@@ -114,7 +160,7 @@ function createButton(text, onClick){
         // Create Text
         const textGeometry = new TextGeometry(text, {
             font: font,
-            size: 0.5,    // Font size
+            size: 0.3,    // Font size
             height: 0.2,  // Depth of the text
             curveSegments: 12, // Curve quality
             bevelEnabled: true, // Optional beveling
@@ -217,7 +263,75 @@ function eventTrigger(text){
 }
 
 
-//when instructions clicked: expand the home page
-function expandHomePage(){
-    billboardMesh.scale.set(2,2,2);
+//fade homePage out and fade homePage in
+function expandHomePage() {
+    const duration = 1; // Duration of the animation in seconds
+
+    const initialPosition = homePage.position.clone(); // Save current scale
+    const targetPosition = new THREE.Vector3(initialPosition.x, initialPosition.y + 8, initialPosition.z); // Desired expanded scale
+
+
+    const clock = new THREE.Clock();
+    function animate() {
+        const elapsed = clock.getElapsedTime();
+        const t = Math.min(elapsed / duration, 1); // Normalize time to [0, 1]
+
+        homePage.position.lerpVectors(initialPosition, targetPosition, t);
+
+        if (t < 1) {
+            requestAnimationFrame(animate); // Continue animation
+        } else {
+            homePage.clear(); // Clear all children after scaling
+            populateInstructions(); // Add new content
+        }
+    }
+
+    clock.start();
+    animate();
 }
+
+
+function populateInstructions() {
+    // Add new content to the billboard for instructions
+
+
+    const loader = new FontLoader();
+    loader.load('./assets/font.typeface.json', (font) => {
+        const instructionsText = new TextGeometry('Instructions :', {
+            font: font,
+            size: 0.3,
+            height: 0.2,
+            curveSegments: 12,
+            bevelEnabled: true,
+            bevelThickness: 0.03,
+            bevelSize: 0.02,
+        });
+        const textMaterial = new THREE.MeshBasicMaterial({ color: 0xBF40BF });
+        const textMesh = new THREE.Mesh(instructionsText, textMaterial);
+        textMesh.position.set(0, 2, 0.01);
+        //positioning text
+        centerText(textMesh, billboardMesh);
+        textMesh.position.y += 3
+
+        //scaling billboard
+        billboardMesh.scale.set(3,2,2);
+        
+        homePage.add(billboardMesh)
+        homePage.add(textMesh);
+    });
+    //button to go back 
+    const backButton = createButton('Back', eventTrigger('Back'));
+    
+    //load images of instructions
+    const pushingBoxCanvas = new THREE.PlaneGeometry(5,3); 
+    const pushingBoxImgMesh = new THREE.Mesh(pushingBoxCanvas, imageMaterial)
+    //make bg transparent? 
+
+    homePage.add(pushingBoxImgMesh);
+    pushingBoxImgMesh.position.z += 0.01
+
+    backButton.position.y -= 3;
+    homePage.add(backButton);
+}
+
+
