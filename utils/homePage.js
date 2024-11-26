@@ -346,6 +346,7 @@ function populateInstructions() {
     homePage.add(backButton);
 }
 
+//navigating from instructions to menu
 function goBackToMenu(){
     homePage.clear();
     billboardMesh.scale.set(1,1,1);
