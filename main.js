@@ -12,9 +12,10 @@ const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.inner
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize( window.innerWidth, window.innerHeight );
 document.body.appendChild( renderer.domElement );
-
+const startGameCameraPosition = new THREE.Vector3(0, 10, 5);
+const homeScreenCameraPosition = new THREE.Vector3(0, 12, 10);
 const controls = new OrbitControls(camera, renderer.domElement);
-camera.position.set(0, 10, 5); //after demo(5, 10, 5)
+camera.position.set(0,10,10); //after demo(5, 10, 5)
 let camLastPos = new THREE.Vector3(5, 10, 5); // For keeping track of rotation. Not the most elegant
 controls.target.set(0, 0, 0);
 
@@ -299,6 +300,7 @@ let resetM = false;
 
 let homePage = createHomePage(scene);
 scene.add(homePage);
+
 
 
 //only allow player to move if game starts
@@ -746,8 +748,25 @@ function animate() {
  
 }
 
-//fetch map data then intialize and begin animating the game
+document.addEventListener('buttonClick', (event) => {
+  const button = event.detail.button;
+  if (button === 'Play') 
+  {
+    startGame();
+  } else if (button === 'Instructions') {
+    console.log("Instructions button clicked");
+  }
+});
 
+
+
+function startGame(){
+  gameStart = true; 
+  scene.remove(homePage);
+  camera.position.copy(startGameCameraPosition)
+}
+
+//fetch map data then intialize and begin animating the game
 let mapData; 
 fetch ('./maps.json')
 .then(response => response.json())

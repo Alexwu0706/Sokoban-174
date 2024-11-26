@@ -57,21 +57,21 @@ const buttonUniforms = {
     opacity: { value: 0.8 } 
 }
 
+const homePage = new THREE.Group();
+
+const billboardGeometry = new THREE.PlaneGeometry(6, 6);
+const billBoardMatShader = new BillBoardShader();
+const billboardMaterial = new THREE.ShaderMaterial({
+    uniforms: billBoardUniforms,
+    vertexShader: billBoardMatShader.vertexShader(),
+    fragmentShader: billBoardMatShader.fragmentShader(),
+    transparent: true
+});
+const billboardMesh = new THREE.Mesh(billboardGeometry, billboardMaterial);
+billboardMesh.position.set(0, 0, 0);
+
 
 export function createHomePage(scene){
-
-    const homePage = new THREE.Group();
-
-    const billboardGeometry = new THREE.PlaneGeometry(6, 6);
-    const billBoardMatShader = new BillBoardShader();
-    const billboardMaterial = new THREE.ShaderMaterial({
-        uniforms: billBoardUniforms,
-        vertexShader: billBoardMatShader.vertexShader(),
-        fragmentShader: billBoardMatShader.fragmentShader(),
-        transparent: true
-    });
-    const billboardMesh = new THREE.Mesh(billboardGeometry, billboardMaterial);
-    billboardMesh.position.set(0, 0, 0);
 
     const loader = new FontLoader();
     loader.load('./assets/font.typeface.json', (font) => {
@@ -95,8 +95,8 @@ export function createHomePage(scene){
     });
 
     //create buttons
-    let playButton = createButton('Play', startGame() );
-    let instructionsButton = createButton('Instructions', instructionsExpand());
+    let playButton = createButton('Play', eventTrigger() );
+    let instructionsButton = createButton('Instructions', eventTrigger());
    
     instructionsButton.position.y -= 2; 
     homePage.add(playButton);
@@ -124,7 +124,7 @@ function createButton(text, onClick){
         const textMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
         const textMesh = new THREE.Mesh(textGeometry, textMaterial);
         textMesh.position.set(0,0,0.01)
-        textMesh.name = text;
+        textMesh.name = text + "Button";
         
         //create button background to be wider than text
         const textBox = new THREE.Box3().setFromObject(textMesh);
@@ -137,7 +137,7 @@ function createButton(text, onClick){
             transparent: true
         });
         const buttonMesh = new THREE.Mesh(buttonBG, buttonMaterial);
-
+        buttonMesh.name = text + "BG"
         //center text on button
         centerText(textMesh, buttonMesh);
         button.add(buttonMesh);
@@ -181,17 +181,22 @@ export function setupClickDetection(camera, billboard) {
         raycaster.setFromCamera(mouse, camera);
 
         const intersects = raycaster.intersectObjects(billboard.children, true);
-        for (let i = 0; i < intersects.length; i++) {
-            console.log(i, intersects[i].object);
-        }
         if (intersects.length > 0) {
             const clickedObject = intersects[0].object;
             switch(clickedObject.name){
-                case 'playButton':
-                    console.log('play button')
+                case 'PlayButton':
+                    eventTrigger('Play');
                     break;
-                case 'instructionsButton':
-                    console.log('instructions button')
+                case 'PlayBG': 
+                    eventTrigger('Play');
+                    break;
+                case 'InstructionsButton':
+                    expandHomePage();
+                    eventTrigger('Instructions');
+                    break;
+                case 'InstructionsBG':
+                    expandHomePage();
+                    eventTrigger('Instructions');
                     break;
                 default:
                     console.log(clickedObject)
@@ -204,11 +209,15 @@ export function setupClickDetection(camera, billboard) {
 
 
 
+//can have an event listener, that throws an event and when event is picked up, it will change boolean 
 
-function startGame(){
-    console.log('play button')
+function eventTrigger(text){
+    const event = new CustomEvent('buttonClick', {detail: {button : text}});
+    document.dispatchEvent(event);
 }
 
-function instructionsExpand(){
-    console.log('instructions button')
+
+//when instructions clicked: expand the home page
+function expandHomePage(){
+    billboardMesh.scale.set(2,2,2);
 }
