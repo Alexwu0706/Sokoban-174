@@ -298,6 +298,10 @@ let panRight = false;
 let resetM = false;
 
 
+
+
+
+//add homePage to scene initially
 let homePage = createHomePage();
 scene.add(homePage);
 
@@ -549,6 +553,9 @@ let levelCleared = false;
 let flag = 1; //Map Update
 let T_player = 1.5; // Player's floating period in seconds
 let T_boxes = 1; // Boxes's floating period in seconds
+let previousMovementTime = 0.0; 
+let canMove = true; 
+let moveDelay = 0.3; // Delay in seconds
 
 
 
@@ -559,7 +566,14 @@ function animate() {
  controls.update();
  delta_animation_time = clock.getDelta();
  animation_time += delta_animation_time; 
- 
+
+ //delay for player movement
+ let elapsedTime = clock.getElapsedTime();
+ //player is ony permitte to move when moveDelay has elapsed
+ if (elapsedTime - previousMovementTime > moveDelay){
+  canMove = true; 
+ }
+
  // Make the homepage always in front of the camera
  if (!gameStart && homePage) {
   const distanceFromCamera = 10; 
@@ -604,7 +618,7 @@ function animate() {
 
 
  //Player Motion (could maybe set delay to prevent player from moving too fast or hold key down)
- if(forward){
+ if(forward && canMove){
   // players[0].matrix.multiply(translationMatrix(0,0,-1));
   playerPosition.z -= 1;
   playerRotationY = -Math.PI / 2;
@@ -612,27 +626,32 @@ function animate() {
   // players[0].children[2].position.z = hat_Width;
   // players[0].children[2].rotation.x = hat_Angle;
   forward = false;
- }else if(backward){
+  previousMovementTime = elapsedTime; 
+  canMove = false; 
+ }else if(backward && canMove){
   // players[0].matrix.multiply(translationMatrix(0,0,1));
   playerPosition.z += 1;
   playerRotationY = Math.PI / 2;
   previousMovement = [0,1];
   backward = false;
-  
- }else if(right){
+  previousMovementTime = elapsedTime; 
+  canMove = false;
+ }else if(right && canMove){
   // players[0].matrix.multiply(translationMatrix(1,0,0));
   playerPosition.x += 1;
   playerRotationY = Math.PI;
   previousMovement = [1,0];
   right = false;
-
- }else if(left){
+  previousMovementTime = elapsedTime; 
+  canMove = false;
+ }else if(left && canMove){
   // players[0].matrix.multiply(translationMatrix(-1,0,0));
   playerPosition.x -= 1;
   playerRotationY = 0;
   previousMovement = [-1,0];
   left = false;
-
+  previousMovementTime = elapsedTime; 
+  canMove = false;
  }
 
  //check if newPlayerPos lies within bounding box of wallsBB
