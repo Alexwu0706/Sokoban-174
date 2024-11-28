@@ -181,8 +181,8 @@ custom_cube_geometry.setIndex(new THREE.BufferAttribute(new Uint16Array(indices)
 let playerPA_geometry = new THREE.SphereGeometry(1/4); //Head
 let playerPB_geometry = new THREE.ConeGeometry(1/3); //Body
 let playerPC_geometry = new THREE.ConeGeometry(1/8,1/2); //Hat
-let playerPE_geometry = new THREE.SphereGeometry(1/16); //L-Hand
-let playerPF_geometry = new THREE.SphereGeometry(1/16); //R-Hand
+let playerLeftHand_geometry = new THREE.CylinderGeometry(0.1,0.1,0.4,32); //L-Hand
+let playerRightHand_geometry = new THREE.CylinderGeometry(0.1,0.1,0.4,32); //R-Hand
 let boxPA_geometry = new THREE.ExtrudeGeometry(starShape, {
  depth: 0.2, 
  bevelEnabled: false, //not to smooth the edge
@@ -365,6 +365,9 @@ let playerPC_Height = 0.9;
 let hat_Width = 0.2;
 let hat_Angle = Math.PI*25/180; 
 let star_Height = 0.3;
+let playerHands_Height = 0.1; // both hands are synced
+const pushingHand_Height = 0.3;  
+const pushingHand_Rotation = 1.5; //radians
 //(hat_Angle , 0, 0); (0, playerPC_Height, hat_Width) forward
 //(-hat_Angle , 0, 0); (0, playerPC_Height, -hat_Width) backward 
 //(0 , 0, hat_Angle); (-hat_Width, playerPC_Height, 0) Right
@@ -403,6 +406,13 @@ function initializeScene(flag){
  let playerPB = new THREE.Mesh(playerPB_geometry,playerPB_material);
  let playerPC = new THREE.Mesh(playerPC_geometry,playerPC_material);
  let playerPD = new THREE.Mesh(custom_cube_geometry,playerPD_material);
+ let playerRightHand = new THREE.Mesh(playerRightHand_geometry,playerPD_material);
+ let playerLeftHand = new THREE.Mesh(playerLeftHand_geometry,playerPD_material);
+ playerRightHand.position.set(0,playerHands_Height,-0.3);
+ playerRightHand.rotation.set(Math.PI/6,0,0);
+ playerLeftHand.position.set(0,playerHands_Height,0.3);
+ playerLeftHand.rotation.set(-Math.PI/6,0,0);
+ 
  playerPA.position.set(0, playerPA_Height, 0); //Head
  playerPB.position.set(0, playerPB_Height, 0); //Body
  playerPC.position.set(hat_Width, playerPC_Height, 0); //Hat
@@ -412,6 +422,8 @@ function initializeScene(flag){
  player.add(playerPB);
  player.add(playerPC);
  player.add(playerPD);
+ player.add(playerRightHand);
+ player.add(playerLeftHand);
  playerPD.visible = false;
  player.position.set(0,0,0);
 
@@ -572,6 +584,9 @@ function animate() {
  players[0].children[0].position.y = floating_player + playerPA_Height; 
  players[0].children[1].position.y = floating_player + playerPB_Height; 
  players[0].children[2].position.y = floating_player + playerPC_Height; 
+ players[0].children[4].position.y = floating_player + playerHands_Height;
+ players[0].children[5].position.y = floating_player + playerHands_Height;
+
  //(hat_Angle , 0, 0); (0, playerPC_Height, hat_Width) forward
  //(-hat_Angle , 0, 0); (0, playerPC_Height, -hat_Width) backward 
  //(0 , 0, hat_Angle); (-hat_Width, playerPC_Height, 0) Right

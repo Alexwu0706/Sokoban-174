@@ -95,8 +95,7 @@ const buttonUniforms = {
     opacity: { value: 0.8 } 
 }
 
-const homePage = new THREE.Group();
-const clock = new THREE.Clock();
+let homePage = new THREE.Group();
 
 const billboardGeometry = new THREE.PlaneGeometry(6, 6);
 const billBoardMatShader = new BillBoardShader();
@@ -127,6 +126,8 @@ const buttonMaterial = new THREE.ShaderMaterial({
 });
 
 let titleMesh;
+
+
 
 
 export function createHomePage(){
@@ -349,9 +350,8 @@ function populateInstructions() {
 //there is still a bug where the title does not appear
 //navigating from instructions to menu
 function goBackToMenu(){
-    homePage.clear();
     billboardMesh.scale.set(1,1,1);
-    createHomePage();
+    homePage.clear();
+    homePage = createHomePage();
     //for some reason title did not reappear
-    homePage.add(titleMesh)
 }
