@@ -480,6 +480,7 @@ function playerCollisionWall(targetPosition){
 
 //player cannot move into two boxes at the same time
 //return the index of box to be moved or -1 if no box is moved after player move
+//return -2 if player cannot move box due to collision with another box or wall
 function playerCollisionBox(targetPosition){
   let collidingIndex = -1; 
   for (let i = 0; i < boxesBB.length; i++){
@@ -488,11 +489,11 @@ function playerCollisionBox(targetPosition){
       //dont move box if it collides with another box 
       collidingIndex = i;
       if (boxCollisionWithBoxes(i)){
-        return -1;  // can terminate early at first collision detected
+        return -2;  // can terminate early at first collision detected
       }
       //dont move box if it collides with wall
       if (boxCollisionWithWalls(i)){
-        return -1; 
+        return -2; 
       }
     } 
   
@@ -539,6 +540,8 @@ let panRight = false;
 let resetM = false;
 let direction = new THREE.Vector3();
 let targetPosition = new THREE.Vector3();
+let previousPosition = new THREE.Vector3();
+let boxPreviousPosition = new THREE.Vector3();
 //add homePage to scene initially
 let homePage = createHomePage();
 scene.add(homePage);
@@ -552,6 +555,7 @@ function onKeyPress(event) {
 
       case 'w': 
       targetPosition.set(players[0].position.x, players[0].position.y, players[0].position.z - 1);
+      previousPosition.copy(players[0].position);
       //rotate player no matter if it moves or not
       players[0].rotation.y = -Math.PI / 2;
       direction.set(0,0,-1);
@@ -563,15 +567,19 @@ function onKeyPress(event) {
       //check if player moving into box 
       //index of box to be moved returned if can be moved
       moveBoxIndex = playerCollisionBox(targetPosition);
-      if (moveBoxIndex == -1){
-        isMoving = false
+      if (moveBoxIndex == -2){
+        console.log('box collision')
+        isMoving = false;
         break;
+      } else if (moveBoxIndex != -1){
+        boxPreviousPosition.copy(boxes[moveBoxIndex].position);
       }
       isMoving = true; 
       break;
 
       case 'a': 
       targetPosition.set(players[0].position.x - 1, players[0].position.y, players[0].position.z);
+      previousPosition.copy(players[0].position);
       players[0].rotation.y = 0;
       direction.set(-1,0,0);
       //check if player moving into wall
@@ -582,15 +590,19 @@ function onKeyPress(event) {
       //check if player moving into box 
       //index of box to be moved returned if can be moved
       moveBoxIndex = playerCollisionBox(targetPosition);
-      if (moveBoxIndex == -1){
-        isMoving = false
+      if (moveBoxIndex == -2){
+        console.log('box collision')
+        isMoving = false;
         break;
+      } else if (moveBoxIndex != -1){
+        boxPreviousPosition.copy(boxes[moveBoxIndex].position);
       }
       isMoving = true; 
       break;
 
       case 's': 
       targetPosition.set(players[0].position.x, players[0].position.y, players[0].position.z + 1);
+      previousPosition.copy(players[0].position);
       players[0].rotation.y = Math.PI / 2;
       direction.set(0,0,1);
       //check if player moving into wall
@@ -601,15 +613,20 @@ function onKeyPress(event) {
       //check if player moving into box 
       //index of box to be moved returned if can be moved
       moveBoxIndex = playerCollisionBox(targetPosition);
-      if (moveBoxIndex == -1){
-        isMoving = false
+      if (moveBoxIndex == -2){
+        console.log('box collision')
+        isMoving = false;
         break;
+      } else if (moveBoxIndex != -1){
+        boxPreviousPosition.copy(boxes[moveBoxIndex].position);
       }
+      
       isMoving = true; 
       break;
 
       case 'd': 
       targetPosition.set(players[0].position.x + 1, players[0].position.y, players[0].position.z);
+      previousPosition.copy(players[0].position);
       players[0].rotation.y = Math.PI;
       direction.set(1,0,0);
       //check if player moving into wall
@@ -620,9 +637,12 @@ function onKeyPress(event) {
       //check if player moving into box 
       //index of box to be moved returned if can be moved
       moveBoxIndex = playerCollisionBox(targetPosition);
-      if (moveBoxIndex == -1){
-        isMoving = false
+      if (moveBoxIndex == -2){
+        console.log('box collision')
+        isMoving = false;
         break;
+      } else if (moveBoxIndex != -1){
+        boxPreviousPosition.copy(boxes[moveBoxIndex].position);
       }
       isMoving = true; 
       break;
@@ -682,10 +702,8 @@ let levelCleared = false;
 let flag = 1; //Map Update
 let T_player = 1.5; // Player's floating period in seconds
 let T_boxes = 1; // Boxes's floating period in seconds
-let previousMovementTime = 0.0; 
-let canMove = true; 
-let moveDelay = 0.3; // Delay in seconds
-
+let duration = 0.5; // Duration of player movement in seconds
+let animation_time_movement = 0; 
 //to animate player movement: 
 /*
   - WASD should trigger a target position for player
@@ -698,7 +716,6 @@ let moveDelay = 0.3; // Delay in seconds
 
 
 function animate() {
- let previousMovement = [0,0]; // x,z movement
  renderer.render( scene, camera );
  controls.update();
 
@@ -746,104 +763,46 @@ function animate() {
  boxes[i].children[0].rotation.y = animation_time;
  //boxes[i].children[0].rotation.z = animation_time;
  }
+ //player movement along with box movement
+ //need to reset isMoving, direction, moveBoxIndex after player has moved
+  if (isMoving) {
+      animation_time_movement += delta_animation_time;
+      // Calculate the progress normalized to the duration
+      let progress = Math.min(animation_time_movement / duration, 1); // Clamp to [0, 1]
+      // Smooth easing
+      let oscilation = 0.5 * (1 - Math.cos(progress * Math.PI)); // From 0 to 1
 
+      // Update the player's position
+      players[0].position.set(
+          previousPosition.x + oscilation * direction.x,
+          previousPosition.y + oscilation * direction.y, 
+          previousPosition.z + oscilation * direction.z
+      );
 
- //Player Motion (could maybe set delay to prevent player from moving too fast or hold key down)
- if(forward && canMove){
-  // players[0].matrix.multiply(translationMatrix(0,0,-1));
-  playerPosition.z -= 1;
-  playerRotationY = -Math.PI / 2;
-  previousMovement = [0,-1];
-  // players[0].children[2].position.z = hat_Width;
-  // players[0].children[2].rotation.x = hat_Angle;
-  forward = false;
-  previousMovementTime = elapsedTime; 
-  canMove = false; 
-  isMoving = true; 
-  directions[0] = 1;
-  previousPosition = players[0].position;
+      //update box position if player moving box
+      if (moveBoxIndex != -1){
+        boxes[moveBoxIndex].position.set(
+          boxPreviousPosition.x + oscilation * direction.x,
+          boxPreviousPosition.y + oscilation * direction.y, 
+          boxPreviousPosition.z + oscilation * direction.z
+        );
+      }
 
-  //playerTargetPosition = new THREE.Vector3(playerPosition.x, players[0].position.y, playerPosition.z - 1); 
- }else if(backward && canMove){
-  // players[0].matrix.multiply(translationMatrix(0,0,1));
-  playerPosition.z += 1;
-  playerRotationY = Math.PI / 2;
-  previousMovement = [0,1];
-  backward = false;
- }else if(right && canMove){
-  playerPosition.x += 1;
-  playerRotationY = Math.PI;
-  previousMovement = [1,0];
-  right = false;
- }else if(left && canMove){
-  playerPosition.x -= 1;
-  playerRotationY = 0;
-  previousMovement = [-1,0];
-  left = false;
-}
-
-  //check if newPlayerPos lies within bounding box of wallsBB
-  // can use target position to interpolate between current and target position
-  // if player collides with wall, isMoving = false (will do check in windowListener)
-  for (let i = 0; i < wallsBB.length; i++){
-    if (playerCollisionCheck(playerPosition,wallsBB[i])){
-      //go back to previous position
-      playerPosition.x -= previousMovement[0];
-      playerPosition.z -= previousMovement[1];
-    }
+      // Stop the animation when it reaches the end
+      if (progress >= 1) {
+          isMoving = false;
+          animation_time_movement = 0; // Reset for future animations
+          previousPosition.copy(players[0].position); // Update the start position
+      }
   }
+  //update boundary boxes
+  playersBB[0].setFromObject(players[0]);
 
- //check if player colliding with Box that can't be pushed
- for (let i = 0; i < boxesBB.length; i++){
-  //check if player can move box
-  if (playerCollisionCheck(playerPosition,boxesBB[i])){
-
-    boxes[i].matrix.multiply(translationMatrix(previousMovement[0],0,previousMovement[1]));
-    boxesBB[i].setFromObject(boxes[i]);
-    //box cannot move into wall 
-    for (let j = 0; j < wallsBB.length; j++){
-      if (boundingBoxCollisionCheck(boxesBB[i],wallsBB[j])){
-        playerPosition.x -= previousMovement[0];
-        playerPosition.z -= previousMovement[1];
-
-        //move boxes back
-        boxes[i].matrix.multiply(translationMatrix(-previousMovement[0],0,-previousMovement[1]));
-        boxesBB[i].setFromObject(boxes[i]);
-      }
-    }
-    //box cannot move into another box
-    for (let k = 0; k < boxesBB.length; k++){
-      if (i != k && boundingBoxCollisionCheck(boxesBB[i],boxesBB[k])){
-        playerPosition.x -= previousMovement[0];
-        playerPosition.z -= previousMovement[1];
-
-        //move boxes back
-        boxes[i].matrix.multiply(translationMatrix(-previousMovement[0],0,-previousMovement[1]));
-        boxesBB[i].setFromObject(boxes[i]);
-      }
-    }
-    //box moves before player to prevent player from moving through box
-  } 
-
- }
- //update player position, no collisions interpolate towards playerPosition
- if (isMoving){
-   
- }
- players[0].position.copy(playerPosition);
- players[0].rotation.y = playerRotationY;
-
- //update boundary boxes
- playersBB[0].setFromObject(players[0]);
-
-
- //boxes cannot push through walls
-
- //all boxes are on targets
- if (checkTargetBoxes() == boxes_target.length){
-  resetM = true;
-  levelCleared = true;
- }
+  //all boxes are on targets
+  if (checkTargetBoxes() == boxes_target.length){
+    resetM = true;
+    levelCleared = true;
+  }
 
  //camera transition
  // if (panLeft) {
@@ -876,42 +835,42 @@ function animate() {
 
 
  ///// map resetting logic //// 
- if (resetM) {
-  for (let i = 0; i < Wx.length; i++) {
-    scene.remove(walls[i]);
+  if (resetM) {
+    for (let i = 0; i < Wx.length; i++) {
+      scene.remove(walls[i]);
 
-  }
-  for (let i = 0; i < Bx.length; i++) {
-    scene.remove(boxes[i]);
-    scene.remove(boxes_target[i]);
-  }
-  for (let i = 0; i < Gx.length; i++){
-    scene.remove(grounds[i]);
-  }
-  for (let i = 0; i < players.length; i++) { 
-    scene.remove(players[i]);
-  }
-  // Empty the arrays
-  walls.length = 0;
-  wallsBB.length = 0;
-  boxes.length = 0;
-  boxes_target.length = 0;
-  boxesBB.length = 0;
-  boxes_TargetBB.length = 0;
-  grounds.length = 0;
-  players.length = 0;
-  playersBB.length = 0;
+    }
+    for (let i = 0; i < Bx.length; i++) {
+      scene.remove(boxes[i]);
+      scene.remove(boxes_target[i]);
+    }
+    for (let i = 0; i < Gx.length; i++){
+      scene.remove(grounds[i]);
+    }
+    for (let i = 0; i < players.length; i++) { 
+      scene.remove(players[i]);
+    }
+    // Empty the arrays
+    walls.length = 0;
+    wallsBB.length = 0;
+    boxes.length = 0;
+    boxes_target.length = 0;
+    boxesBB.length = 0;
+    boxes_TargetBB.length = 0;
+    grounds.length = 0;
+    players.length = 0;
+    playersBB.length = 0;
 
- //only advance if level cleared
-  if (levelCleared){
-    console.log(flag, "flag");
-    flag = flag + 1;
-    levelCleared = false;
+  //only advance if level cleared
+    if (levelCleared){
+      console.log(flag, "flag");
+      flag = flag + 1;
+      levelCleared = false;
+    }
+    console.log(walls, boxes);
+    resetM = false;
+    initializeScene(flag);
   }
-  console.log(walls, boxes);
-  resetM = false;
-  initializeScene(flag);
- }
 
  //Interaction Implementation
  
