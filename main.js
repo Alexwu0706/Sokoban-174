@@ -288,59 +288,6 @@ const sky_material = new THREE.MeshStandardMaterial({
     side: THREE.BackSide
 });
 
-/////Interaction (Player Motion; Boxes-players interaction; Boxes-Boxes interaction)///////////////////////////
-let forward = false;
-let backward = false;
-let right = false;
-let left = false;
-let panLeft = false;
-let panRight = false;
-let resetM = false;
-
-
-
-
-
-//add homePage to scene initially
-let homePage = createHomePage();
-scene.add(homePage);
-
-
-
-//only allow player to move if game starts
-
-window.addEventListener('keydown', onKeyPress); // onKeyPress is called each time a key is pressed
-setupClickDetection(camera, homePage)
-function onKeyPress(event) {
-  if(gameStart){
-    switch (event.key) {
-      case 'w': 
-      forward = true; //Translation +1z
-      break;
-      case 'a':
-      left = true; //Translation -1x
-      break;
-      case 's':
-      backward = true; //Translation -1z
-      break; 
-      case 'd':
-      right = true; //Translation +1x
-      break; 
-      case 'q':
-      panLeft = true; // Rotate camera counterclockwise
-      break;
-      case 'e':
-      panRight = true; // Rotate camera clockwise
-      break;
-      case 'r':
-      resetM = true;
-      break; 
-      default:
-      console.log(`Key ${event.key} pressed`);
-     }
-  }
-}
-
 
 
 //storing map info 
@@ -518,6 +465,183 @@ function createGrid(m,n){
 }
 
 
+////// functions to check for collisions ///// 
+
+//isMove is false if player is colliding with wall
+function playerCollisionWall(targetPosition){
+  let colliding = false; 
+  for (let i = 0; i < wallsBB.length; i++){
+    if (playerCollisionCheck(targetPosition,wallsBB[i])){
+      colliding = true; 
+    }
+  }
+  return colliding; 
+}
+
+//player cannot move into two boxes at the same time
+//return the index of box to be moved or -1 if no box is moved after player move
+function playerCollisionBox(targetPosition){
+  let collidingIndex = -1; 
+  for (let i = 0; i < boxesBB.length; i++){
+    //check if player can move box 
+    if (playerCollisionCheck(targetPosition,boxesBB[i])){
+      //dont move box if it collides with another box 
+      collidingIndex = i;
+      if (boxCollisionWithBoxes(i)){
+        return -1;  // can terminate early at first collision detected
+      }
+      //dont move box if it collides with wall
+      if (boxCollisionWithWalls(i)){
+        return -1; 
+      }
+    } 
+  
+  }
+  return collidingIndex
+}
+
+//check box collision with other boxes
+//return true if box is colliding with another box
+//return false otherwise
+function boxCollisionWithBoxes(boxIndex){
+  let colliding = false; 
+  for (let i = 0; i < boxesBB.length; i++){
+    if (i != boxIndex && boundingBoxCollisionCheck(boxesBB[boxIndex],boxesBB[i])){
+      colliding = true; 
+    }
+  }
+  return colliding; 
+}
+
+//check box collision with walls
+//return true if box is colliding with a wall
+//return false otherwise
+function boxCollisionWithWalls(boxIndex){
+  let colliding = false
+  for (let i = 0; i < wallsBB.length; i++){
+    if (boundingBoxCollisionCheck(boxesBB[boxIndex],wallsBB[i])){
+      colliding = true; 
+    }
+  }
+  return colliding
+}
+
+
+/////Interaction (Player Motion; Boxes-players interaction; Boxes-Boxes interaction)///////////////////////////
+let forward = false;
+let backward = false;
+let right = false;
+let left = false;
+let isMoving = false; 
+let moveBoxIndex = -1; 
+let panLeft = false;
+let panRight = false;
+let resetM = false;
+let direction = new THREE.Vector3();
+let targetPosition = new THREE.Vector3();
+//add homePage to scene initially
+let homePage = createHomePage();
+scene.add(homePage);
+
+//only allow player to move if game starts
+window.addEventListener('keydown', onKeyPress); // onKeyPress is called each time a key is pressed
+setupClickDetection(camera, homePage)
+function onKeyPress(event) {
+  if(gameStart){
+    switch (event.key) {
+      
+      case 'w': 
+      targetPosition.set(players[0].position.x, players[0].position.y, players[0].position.z - 1);
+      direction.set(0,0,-1);
+      //check if player moving into wall
+      if (playerCollisionWall(targetPosition)){
+        isMoving = false;
+        break; 
+      }
+      //check if player moving into box 
+      //index of box to be moved returned if can be moved
+      moveBoxIndex = playerCollisionBox(targetPosition);
+      if (moveBoxIndex == -1){
+        isMoving = false
+        break;
+      }
+      isMoving = true; 
+      break;
+
+      case 'a': 
+      targetPosition.set(players[0].position.x - 1, players[0].position.y, players[0].position.z);
+      direction.set(-1,0,0);
+      //check if player moving into wall
+      if (playerCollisionWall(targetPosition)){
+        isMoving = false;
+        break; 
+      }
+      //check if player moving into box 
+      //index of box to be moved returned if can be moved
+      moveBoxIndex = playerCollisionBox(targetPosition);
+      if (moveBoxIndex == -1){
+        isMoving = false
+        break;
+      }
+      isMoving = true; 
+      break;
+
+      case 's': 
+      targetPosition.set(players[0].position.x, players[0].position.y, players[0].position.z + 1);
+      direction.set(0,0,1);
+      //check if player moving into wall
+      if (playerCollisionWall(targetPosition)){
+        isMoving = false;
+        break; 
+      }
+      //check if player moving into box 
+      //index of box to be moved returned if can be moved
+      moveBoxIndex = playerCollisionBox(targetPosition);
+      if (moveBoxIndex == -1){
+        isMoving = false
+        break;
+      }
+      isMoving = true; 
+      break;
+
+      case 'd': 
+      targetPosition.set(players[0].position.x + 1, players[0].position.y, players[0].position.z);
+      direction.set(1,0,0);
+      //check if player moving into wall
+      if (playerCollisionWall(targetPosition)){
+        isMoving = false;
+        break; 
+      }
+      //check if player moving into box 
+      //index of box to be moved returned if can be moved
+      moveBoxIndex = playerCollisionBox(targetPosition);
+      if (moveBoxIndex == -1){
+        isMoving = false
+        break;
+      }
+      isMoving = true; 
+      break;
+
+      case 'q':
+      panLeft = true; // Rotate camera counterclockwise
+      break;
+
+      case 'e':
+      panRight = true; // Rotate camera clockwise
+      break;
+
+      case 'r':
+      resetM = true;
+      break; 
+
+      default:
+      console.log(`Key ${event.key} pressed`);
+     }
+  }
+}
+
+
+
 
 //translate target boxes l up and check for collision with boxes
 //check if all boxes are on their targets
@@ -557,6 +681,14 @@ let previousMovementTime = 0.0;
 let canMove = true; 
 let moveDelay = 0.3; // Delay in seconds
 
+//to animate player movement: 
+/*
+  - WASD should trigger a target position for player
+  - whilst player is moving, player should be unable to move
+  - can use time to interpolate between current position and target position
+
+
+*/
 
 
 
@@ -564,15 +696,9 @@ function animate() {
  let previousMovement = [0,0]; // x,z movement
  renderer.render( scene, camera );
  controls.update();
+
  delta_animation_time = clock.getDelta();
  animation_time += delta_animation_time; 
-
- //delay for player movement
- let elapsedTime = clock.getElapsedTime();
- //player is ony permitte to move when moveDelay has elapsed
- if (elapsedTime - previousMovementTime > moveDelay){
-  canMove = true; 
- }
 
  // Make the homepage always in front of the camera
  if (!gameStart && homePage) {
@@ -628,41 +754,39 @@ function animate() {
   forward = false;
   previousMovementTime = elapsedTime; 
   canMove = false; 
+  isMoving = true; 
+  directions[0] = 1;
+  previousPosition = players[0].position;
+
+  //playerTargetPosition = new THREE.Vector3(playerPosition.x, players[0].position.y, playerPosition.z - 1); 
  }else if(backward && canMove){
   // players[0].matrix.multiply(translationMatrix(0,0,1));
   playerPosition.z += 1;
   playerRotationY = Math.PI / 2;
   previousMovement = [0,1];
   backward = false;
-  previousMovementTime = elapsedTime; 
-  canMove = false;
  }else if(right && canMove){
-  // players[0].matrix.multiply(translationMatrix(1,0,0));
   playerPosition.x += 1;
   playerRotationY = Math.PI;
   previousMovement = [1,0];
   right = false;
-  previousMovementTime = elapsedTime; 
-  canMove = false;
  }else if(left && canMove){
-  // players[0].matrix.multiply(translationMatrix(-1,0,0));
   playerPosition.x -= 1;
   playerRotationY = 0;
   previousMovement = [-1,0];
   left = false;
-  previousMovementTime = elapsedTime; 
-  canMove = false;
- }
+}
 
- //check if newPlayerPos lies within bounding box of wallsBB
-
- for (let i = 0; i < wallsBB.length; i++){
-  if (playerCollisionCheck(playerPosition,wallsBB[i])){
-    //go back to previous position
-    playerPosition.x -= previousMovement[0];
-    playerPosition.z -= previousMovement[1];
+  //check if newPlayerPos lies within bounding box of wallsBB
+  // can use target position to interpolate between current and target position
+  // if player collides with wall, isMoving = false (will do check in windowListener)
+  for (let i = 0; i < wallsBB.length; i++){
+    if (playerCollisionCheck(playerPosition,wallsBB[i])){
+      //go back to previous position
+      playerPosition.x -= previousMovement[0];
+      playerPosition.z -= previousMovement[1];
+    }
   }
- }
 
  //check if player colliding with Box that can't be pushed
  for (let i = 0; i < boxesBB.length; i++){
@@ -697,7 +821,10 @@ function animate() {
   } 
 
  }
-
+ //update player position, no collisions interpolate towards playerPosition
+ if (isMoving){
+   
+ }
  players[0].position.copy(playerPosition);
  players[0].rotation.y = playerRotationY;
 
@@ -740,7 +867,10 @@ function animate() {
  // }
  // }
 
- //can press r to reset the current level but won't advance to next level
+
+
+
+ ///// map resetting logic //// 
  if (resetM) {
   for (let i = 0; i < Wx.length; i++) {
     scene.remove(walls[i]);
