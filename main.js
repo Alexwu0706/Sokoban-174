@@ -534,6 +534,7 @@ let backward = false;
 let right = false;
 let left = false;
 let isMoving = false; 
+let canMove = true; 
 let moveBoxIndex = -1; 
 let panLeft = false;
 let panRight = false;
@@ -554,98 +555,105 @@ function onKeyPress(event) {
     switch (event.key) {
 
       case 'w': 
-      targetPosition.set(players[0].position.x, players[0].position.y, players[0].position.z - 1);
-      previousPosition.copy(players[0].position);
-      //rotate player no matter if it moves or not
-      players[0].rotation.y = -Math.PI / 2;
-      direction.set(0,0,-1);
-      //check if player moving into wall
-      if (playerCollisionWall(targetPosition)){
-        isMoving = false;
-        break; 
-      }
-      //check if player moving into box 
-      //index of box to be moved returned if can be moved
-      moveBoxIndex = playerCollisionBox(targetPosition);
-      if (moveBoxIndex == -2){
-        console.log('box collision')
-        isMoving = false;
-        break;
-      } else if (moveBoxIndex != -1){
-        boxPreviousPosition.copy(boxes[moveBoxIndex].position);
-      }
-      isMoving = true; 
+      if (canMove){
+        targetPosition.set(players[0].position.x, players[0].position.y, players[0].position.z - 1);
+        previousPosition.copy(players[0].position);
+        //rotate player no matter if it moves or not
+        players[0].rotation.y = -Math.PI / 2;
+        direction.set(0,0,-1);
+        //check if player moving into wall
+        if (playerCollisionWall(targetPosition)){
+          isMoving = false;
+          break; 
+        }
+        //check if player moving into box 
+        //index of box to be moved returned if can be moved
+        moveBoxIndex = playerCollisionBox(targetPosition);
+        if (moveBoxIndex == -2){
+          console.log('box collision')
+          isMoving = false;
+          break;
+        } else if (moveBoxIndex != -1){
+          boxPreviousPosition.copy(boxes[moveBoxIndex].position);
+        }
+        isMoving = true;
+      } 
       break;
 
       case 'a': 
-      targetPosition.set(players[0].position.x - 1, players[0].position.y, players[0].position.z);
-      previousPosition.copy(players[0].position);
-      players[0].rotation.y = 0;
-      direction.set(-1,0,0);
-      //check if player moving into wall
-      if (playerCollisionWall(targetPosition)){
-        isMoving = false;
-        break; 
-      }
-      //check if player moving into box 
-      //index of box to be moved returned if can be moved
-      moveBoxIndex = playerCollisionBox(targetPosition);
-      if (moveBoxIndex == -2){
-        console.log('box collision')
-        isMoving = false;
+      if (canMove){
+        targetPosition.set(players[0].position.x - 1, players[0].position.y, players[0].position.z);
+        previousPosition.copy(players[0].position);
+        players[0].rotation.y = 0;
+        direction.set(-1,0,0);
+        //check if player moving into wall
+        if (playerCollisionWall(targetPosition)){
+          isMoving = false;
+          break; 
+        }
+        //check if player moving into box 
+        //index of box to be moved returned if can be moved
+        moveBoxIndex = playerCollisionBox(targetPosition);
+        if (moveBoxIndex == -2){
+          console.log('box collision')
+          isMoving = false;
+          break;
+        } else if (moveBoxIndex != -1){
+          boxPreviousPosition.copy(boxes[moveBoxIndex].position);
+        }
+        isMoving = true; 
         break;
-      } else if (moveBoxIndex != -1){
-        boxPreviousPosition.copy(boxes[moveBoxIndex].position);
       }
-      isMoving = true; 
-      break;
-
       case 's': 
-      targetPosition.set(players[0].position.x, players[0].position.y, players[0].position.z + 1);
-      previousPosition.copy(players[0].position);
-      players[0].rotation.y = Math.PI / 2;
-      direction.set(0,0,1);
-      //check if player moving into wall
-      if (playerCollisionWall(targetPosition)){
-        isMoving = false;
-        break; 
-      }
-      //check if player moving into box 
-      //index of box to be moved returned if can be moved
-      moveBoxIndex = playerCollisionBox(targetPosition);
-      if (moveBoxIndex == -2){
-        console.log('box collision')
-        isMoving = false;
+      if (canMove){
+        targetPosition.set(players[0].position.x, players[0].position.y, players[0].position.z + 1);
+        previousPosition.copy(players[0].position);
+        players[0].rotation.y = Math.PI / 2;
+        direction.set(0,0,1);
+        //check if player moving into wall
+        if (playerCollisionWall(targetPosition)){
+          isMoving = false;
+          break; 
+        }
+        //check if player moving into box 
+        //index of box to be moved returned if can be moved
+        moveBoxIndex = playerCollisionBox(targetPosition);
+        if (moveBoxIndex == -2){
+          console.log('box collision')
+          isMoving = false;
+          break;
+        } else if (moveBoxIndex != -1){
+          boxPreviousPosition.copy(boxes[moveBoxIndex].position);
+        }
+        
+        isMoving = true; 
         break;
-      } else if (moveBoxIndex != -1){
-        boxPreviousPosition.copy(boxes[moveBoxIndex].position);
       }
-      
-      isMoving = true; 
-      break;
 
       case 'd': 
-      targetPosition.set(players[0].position.x + 1, players[0].position.y, players[0].position.z);
-      previousPosition.copy(players[0].position);
-      players[0].rotation.y = Math.PI;
-      direction.set(1,0,0);
-      //check if player moving into wall
-      if (playerCollisionWall(targetPosition)){
-        isMoving = false;
-        break; 
-      }
-      //check if player moving into box 
-      //index of box to be moved returned if can be moved
-      moveBoxIndex = playerCollisionBox(targetPosition);
-      if (moveBoxIndex == -2){
-        console.log('box collision')
-        isMoving = false;
+      if (canMove){
+        targetPosition.set(players[0].position.x + 1, players[0].position.y, players[0].position.z);
+        previousPosition.copy(players[0].position);
+        players[0].rotation.y = Math.PI;
+        direction.set(1,0,0);
+        //check if player moving into wall
+        if (playerCollisionWall(targetPosition)){
+          isMoving = false;
+          break; 
+        }
+        //check if player moving into box 
+        //index of box to be moved returned if can be moved
+        moveBoxIndex = playerCollisionBox(targetPosition);
+        if (moveBoxIndex == -2){
+          console.log('box collision')
+          isMoving = false;
+          break;
+        } else if (moveBoxIndex != -1){
+          boxPreviousPosition.copy(boxes[moveBoxIndex].position);
+        }
+        isMoving = true; 
         break;
-      } else if (moveBoxIndex != -1){
-        boxPreviousPosition.copy(boxes[moveBoxIndex].position);
       }
-      isMoving = true; 
-      break;
 
       case 'q':
       panLeft = true; // Rotate camera counterclockwise
@@ -766,6 +774,7 @@ function animate() {
  //player movement along with box movement
  //need to reset isMoving, direction, moveBoxIndex after player has moved
   if (isMoving) {
+      canMove = false; 
       animation_time_movement += delta_animation_time;
       // Calculate the progress normalized to the duration
       let progress = Math.min(animation_time_movement / duration, 1); // Clamp to [0, 1]
@@ -787,9 +796,9 @@ function animate() {
           boxPreviousPosition.z + oscilation * direction.z
         );
       }
-
       // Stop the animation when it reaches the end
       if (progress >= 1) {
+          canMove = true; 
           isMoving = false;
           animation_time_movement = 0; // Reset for future animations
           previousPosition.copy(players[0].position); // Update the start position
