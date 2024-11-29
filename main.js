@@ -389,13 +389,12 @@ function initializeScene(flag){
 
  //add walls to scene
  for (let i = 0; i < Wx.length; i++) {
- let wall = new THREE.Mesh(custom_cube_geometry, wall_material);
- let wallBB = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3()); //Takes in Far and Near points
- wallBB.setFromObject(wall); //Set the bounding box of the wall
- wall.matrixAutoUpdate = false;
- wallsBB.push(wallBB);
- walls.push(wall);
- scene.add(wall); 
+  let wall = new THREE.Mesh(custom_cube_geometry, wall_material);
+  let wallBB = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3()); //Takes in Far and Near points
+  wallBB.setFromObject(wall); //Set the bounding box of the wall
+  wallsBB.push(wallBB);
+  walls.push(wall);
+  scene.add(wall); 
  }
  //add boxes to scene
  for (let i = 0; i < Bx.length; i++) {
@@ -416,39 +415,45 @@ function initializeScene(flag){
   let box_TargetBB = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
   boxBB.setFromObject(box);
   box_TargetBB.setFromObject(box_target);
-  box.matrixAutoUpdate = false;
-  box_target.matrixAutoUpdate = false;
 
   boxes.push(box);
   boxes_target.push(box_target);
   boxesBB.push(boxBB);
   boxes_TargetBB.push(box_TargetBB);
-
+  
   scene.add(box);
   scene.add(box_target);
  }
  //add ground tiles to scene
  for (let i=0; i< Gx.length; i++){
   let ground = new THREE.Mesh(custom_cube_geometry, ground_material);
-  ground.matrixAutoUpdate = false;
   grounds.push(ground);
   scene.add(ground);
  }
 
  //move walls in map to their respective positions
  for (let i=0; i< Wx.length; i++){
-  walls[i].matrix.multiply(translationMatrix(Wx[i],0,Wz[i]));
+  walls[i].position.set(Wx[i],-l,Wz[i]);
+  walls[i].scale.set(1,2,1);
   wallsBB[i].setFromObject(walls[i]);
  }
  //move boxes in map to their respective positions
- for (let i=0; i< Bx.length; i++){
-  boxes[i].matrix.multiply(translationMatrix(Bx[i],0,Bz[i]));;
-  boxes_target[i].matrix.multiply(translationMatrix(Btx[i],-l,Btz[i])).multiply(scalingMatrix(1,1/50,1));
+ for (let i = 0; i < Bx.length; i++) {
+  // Update the position of the boxes
+  boxes[i].position.set(Bx[i], 0, Bz[i]);
+
+  // Update the position and scale of the target boxes
+  boxes_target[i].position.set(Btx[i], -l, Btz[i]);
+  boxes_target[i].scale.set(1, 1 / 50, 1);
+
+  // Update the bounding boxes
   boxes_TargetBB[i].setFromObject(boxes_target[i]);
   boxesBB[i].setFromObject(boxes[i]);
- }
+}
+
  for (let i=0; i< Gx.length; i++){
-  grounds[i].matrix.multiply(translationMatrix(Gx[i],-l,Gz[i])).multiply(scalingMatrix(1,1/1000,1));
+  grounds[i].scale.set(1,1/50,1);
+  grounds[i].position.set(Gx[i],-l,Gz[i]);
  }
 
  //add grid to scene
@@ -481,33 +486,36 @@ function playerCollisionWall(targetPosition){
 //player cannot move into two boxes at the same time
 //return the index of box to be moved or -1 if no box is moved after player move
 //return -2 if player cannot move box due to collision with another box or wall
-function playerCollisionBox(targetPosition){
+function playerCollisionBox(targetPosition, direction){
   let collidingIndex = -1; 
   for (let i = 0; i < boxesBB.length; i++){
     //check if player can move box 
     if (playerCollisionCheck(targetPosition,boxesBB[i])){
+      console.log("colliding with box", i);
       //dont move box if it collides with another box 
       collidingIndex = i;
-      if (boxCollisionWithBoxes(i)){
+      if (boxCollisionWithBoxes(i, direction)){
         return -2;  // can terminate early at first collision detected
       }
       //dont move box if it collides with wall
-      if (boxCollisionWithWalls(i)){
+      if (boxCollisionWithWalls(i, direction)){
         return -2; 
       }
     } 
   
   }
+  console.log("hit box",collidingIndex)
   return collidingIndex
 }
 
 //check box collision with other boxes
 //return true if box is colliding with another box
 //return false otherwise
-function boxCollisionWithBoxes(boxIndex){
+function boxCollisionWithBoxes(boxIndex, direction){
   let colliding = false; 
+  let boxTargetPosition = new THREE.Vector3().copy(boxes[boxIndex].position).add(direction);
   for (let i = 0; i < boxesBB.length; i++){
-    if (i != boxIndex && boundingBoxCollisionCheck(boxesBB[boxIndex],boxesBB[i])){
+    if (i != boxIndex && playerCollisionCheck(boxTargetPosition,boxesBB[i])){
       colliding = true; 
     }
   }
@@ -517,10 +525,11 @@ function boxCollisionWithBoxes(boxIndex){
 //check box collision with walls
 //return true if box is colliding with a wall
 //return false otherwise
-function boxCollisionWithWalls(boxIndex){
+function boxCollisionWithWalls(boxIndex, direction){
   let colliding = false
+  let boxTargetPosition = new THREE.Vector3().copy(boxes[boxIndex].position).add(direction);
   for (let i = 0; i < wallsBB.length; i++){
-    if (boundingBoxCollisionCheck(boxesBB[boxIndex],wallsBB[i])){
+    if (playerCollisionCheck(boxTargetPosition,wallsBB[i])){
       colliding = true; 
     }
   }
@@ -568,13 +577,14 @@ function onKeyPress(event) {
         }
         //check if player moving into box 
         //index of box to be moved returned if can be moved
-        moveBoxIndex = playerCollisionBox(targetPosition);
+        moveBoxIndex = playerCollisionBox(targetPosition, direction);
         if (moveBoxIndex == -2){
           console.log('box collision')
           isMoving = false;
           break;
         } else if (moveBoxIndex != -1){
           boxPreviousPosition.copy(boxes[moveBoxIndex].position);
+          boxesBB[moveBoxIndex].setFromObject(boxes[moveBoxIndex]);
         }
         isMoving = true;
       } 
@@ -593,13 +603,14 @@ function onKeyPress(event) {
         }
         //check if player moving into box 
         //index of box to be moved returned if can be moved
-        moveBoxIndex = playerCollisionBox(targetPosition);
+        moveBoxIndex = playerCollisionBox(targetPosition, direction);
         if (moveBoxIndex == -2){
           console.log('box collision')
           isMoving = false;
           break;
         } else if (moveBoxIndex != -1){
           boxPreviousPosition.copy(boxes[moveBoxIndex].position);
+          boxesBB[moveBoxIndex].setFromObject(boxes[moveBoxIndex]);
         }
         isMoving = true; 
         break;
@@ -617,13 +628,14 @@ function onKeyPress(event) {
         }
         //check if player moving into box 
         //index of box to be moved returned if can be moved
-        moveBoxIndex = playerCollisionBox(targetPosition);
+        moveBoxIndex = playerCollisionBox(targetPosition, direction);
         if (moveBoxIndex == -2){
           console.log('box collision')
           isMoving = false;
           break;
         } else if (moveBoxIndex != -1){
           boxPreviousPosition.copy(boxes[moveBoxIndex].position);
+          boxesBB[moveBoxIndex].setFromObject(boxes[moveBoxIndex]);
         }
         
         isMoving = true; 
@@ -643,13 +655,14 @@ function onKeyPress(event) {
         }
         //check if player moving into box 
         //index of box to be moved returned if can be moved
-        moveBoxIndex = playerCollisionBox(targetPosition);
+        moveBoxIndex = playerCollisionBox(targetPosition, direction);
         if (moveBoxIndex == -2){
           console.log('box collision')
           isMoving = false;
           break;
         } else if (moveBoxIndex != -1){
           boxPreviousPosition.copy(boxes[moveBoxIndex].position);
+          boxesBB[moveBoxIndex].setFromObject(boxes[moveBoxIndex]);
         }
         isMoving = true; 
         break;
