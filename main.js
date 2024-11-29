@@ -549,9 +549,11 @@ setupClickDetection(camera, homePage)
 function onKeyPress(event) {
   if(gameStart){
     switch (event.key) {
-      
+
       case 'w': 
       targetPosition.set(players[0].position.x, players[0].position.y, players[0].position.z - 1);
+      //rotate player no matter if it moves or not
+      players[0].rotation.y = -Math.PI / 2;
       direction.set(0,0,-1);
       //check if player moving into wall
       if (playerCollisionWall(targetPosition)){
@@ -570,6 +572,7 @@ function onKeyPress(event) {
 
       case 'a': 
       targetPosition.set(players[0].position.x - 1, players[0].position.y, players[0].position.z);
+      players[0].rotation.y = 0;
       direction.set(-1,0,0);
       //check if player moving into wall
       if (playerCollisionWall(targetPosition)){
@@ -588,6 +591,7 @@ function onKeyPress(event) {
 
       case 's': 
       targetPosition.set(players[0].position.x, players[0].position.y, players[0].position.z + 1);
+      players[0].rotation.y = Math.PI / 2;
       direction.set(0,0,1);
       //check if player moving into wall
       if (playerCollisionWall(targetPosition)){
@@ -606,6 +610,7 @@ function onKeyPress(event) {
 
       case 'd': 
       targetPosition.set(players[0].position.x + 1, players[0].position.y, players[0].position.z);
+      players[0].rotation.y = Math.PI;
       direction.set(1,0,0);
       //check if player moving into wall
       if (playerCollisionWall(targetPosition)){
