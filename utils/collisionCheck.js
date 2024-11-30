@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 
 //takes in player and an object to check for collision return true or false
-export function playerCollisionCheck(newPos, objectBB) {
+export function movingCollisionCheck(newPos, objectBB) {
     const maxX = objectBB.max.x;
     const minX = objectBB.min.x;
     const minZ = objectBB.min.z;

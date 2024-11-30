@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { boundingBoxCollisionCheck, playerCollisionCheck } from './utils/collisionCheck';
+import { boundingBoxCollisionCheck, movingCollisionCheck } from './utils/collisionCheck';
 import { updateTitleText } from './utils/textDisplays';
 import { createHomePage, setupClickDetection } from './utils/homePage';
 
@@ -476,7 +476,7 @@ function createGrid(m,n){
 function playerCollisionWall(targetPosition){
   let colliding = false; 
   for (let i = 0; i < wallsBB.length; i++){
-    if (playerCollisionCheck(targetPosition,wallsBB[i])){
+    if (movingCollisionCheck(targetPosition,wallsBB[i])){
       colliding = true; 
     }
   }
@@ -490,7 +490,7 @@ function playerCollisionBox(targetPosition, direction){
   let collidingIndex = -1; 
   for (let i = 0; i < boxesBB.length; i++){
     //check if player can move box 
-    if (playerCollisionCheck(targetPosition,boxesBB[i])){
+    if (movingCollisionCheck(targetPosition,boxesBB[i])){
       console.log("colliding with box", i);
       //dont move box if it collides with another box 
       collidingIndex = i;
@@ -517,7 +517,7 @@ function boxCollisionWithBoxes(boxIndex, direction){
   let colliding = false; 
   let boxTargetPosition = new THREE.Vector3().copy(boxes[boxIndex].position).add(direction);
   for (let i = 0; i < boxesBB.length; i++){
-    if (i != boxIndex && playerCollisionCheck(boxTargetPosition,boxesBB[i])){
+    if (i != boxIndex && movingCollisionCheck(boxTargetPosition,boxesBB[i])){
       colliding = true; 
     }
   }
@@ -531,7 +531,7 @@ function boxCollisionWithWalls(boxIndex, direction){
   let colliding = false
   let boxTargetPosition = new THREE.Vector3().copy(boxes[boxIndex].position).add(direction);
   for (let i = 0; i < wallsBB.length; i++){
-    if (playerCollisionCheck(boxTargetPosition,wallsBB[i])){
+    if (movingCollisionCheck(boxTargetPosition,wallsBB[i])){
       colliding = true; 
     }
   }
@@ -699,9 +699,9 @@ function checkTargetBoxes(){
  for (let i= 0; i < boxes_target.length; i++){
   boxIsOnTarget = false;
   checkOnTarget.set(boxes_target[i].position.x, boxes_target[i].position.y + l, boxes_target[i].position.z);
-  for (let j = 0; j < boxesBB.length; j++){
+  for (let j =   0; j < boxesBB.length; j++){
   //if there is a collision with any box update count
-    if (playerCollisionCheck(checkOnTarget, boxesBB[j])){
+    if (movingCollisionCheck(checkOnTarget, boxesBB[j])){
       boxIsOnTarget = true;
     } 
   }
