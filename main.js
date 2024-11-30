@@ -495,10 +495,12 @@ function playerCollisionBox(targetPosition, direction){
       //dont move box if it collides with another box 
       collidingIndex = i;
       if (boxCollisionWithBoxes(i, direction)){
+        console.log("box collision with box")
         return -2;  // can terminate early at first collision detected
       }
       //dont move box if it collides with wall
       if (boxCollisionWithWalls(i, direction)){
+        console.log("box collision with wall")  
         return -2; 
       }
     } 
@@ -609,6 +611,7 @@ function onKeyPress(event) {
           isMoving = false;
           break;
         } else if (moveBoxIndex != -1){
+          console.log(boxes[moveBoxIndex].position, "currentPosition");
           boxPreviousPosition.copy(boxes[moveBoxIndex].position);
           boxesBB[moveBoxIndex].setFromObject(boxes[moveBoxIndex]);
         }
@@ -662,7 +665,6 @@ function onKeyPress(event) {
           break;
         } else if (moveBoxIndex != -1){
           boxPreviousPosition.copy(boxes[moveBoxIndex].position);
-          boxesBB[moveBoxIndex].setFromObject(boxes[moveBoxIndex]);
         }
         isMoving = true; 
         break;
@@ -795,24 +797,30 @@ function animate() {
       let oscilation = 0.5 * (1 - Math.cos(progress * Math.PI)); // From 0 to 1
 
       // Update the player's position
-      players[0].position.set(
-          previousPosition.x + oscilation * direction.x,
-          previousPosition.y + oscilation * direction.y, 
-          previousPosition.z + oscilation * direction.z
-      );
-
-      //update box position if player moving box
       if (moveBoxIndex != -1){
+        console.log(boxPreviousPosition, "boxPreviousPosition");
+        //console.log(boxes[moveBoxIndex].position);
         boxes[moveBoxIndex].position.set(
           boxPreviousPosition.x + oscilation * direction.x,
           boxPreviousPosition.y + oscilation * direction.y, 
           boxPreviousPosition.z + oscilation * direction.z
         );
       }
+
+      players[0].position.set(
+          previousPosition.x + oscilation * direction.x,
+          previousPosition.y + oscilation * direction.y, 
+          previousPosition.z + oscilation * direction.z
+      );
       // Stop the animation when it reaches the end
       if (progress >= 1) {
+          if (moveBoxIndex != -1){
+            boxesBB[moveBoxIndex].setFromObject(boxes[moveBoxIndex]);
+          }
           canMove = true; 
           isMoving = false;
+          moveBoxIndex = -1; 
+          direction.set(0,0,0);
           animation_time_movement = 0; // Reset for future animations
           previousPosition.copy(players[0].position); // Update the start position
       }
@@ -922,7 +930,7 @@ fetch ('./maps.json')
 .then(response => response.json())
 .then(data => {
   mapData = data; 
-  initializeScene(1); //initialize scene with map 1
+  initializeScene(2); //initialize scene with map 1
   renderer.setAnimationLoop( animate );
 })
 .catch(error => {
