@@ -546,10 +546,13 @@ let moveBoxIndex = -1;
 let panLeft = false;
 let panRight = false;
 let resetM = false;
+let pushingHandOffset = 0.2;
 let direction = new THREE.Vector3();
 let targetPosition = new THREE.Vector3();
 let previousPosition = new THREE.Vector3();
 let boxPreviousPosition = new THREE.Vector3();
+let previousLeftHandPosition = new THREE.Vector3();
+let previousRightHandPosition = new THREE.Vector3();
 //add homePage to scene initially
 let homePage = createHomePage();
 scene.add(homePage);
@@ -581,8 +584,9 @@ function onKeyPress(event) {
           isMoving = false;
           break;
         } else if (moveBoxIndex != -1){
+          players[0].children[5].position.set(players[0].children[5].position.x - pushingHandOffset, players[0].children[5].position.y,players[0].children[5].position.z);
+          players[0].children[4].position.set(players[0].children[4].position.x - pushingHandOffset, players[0].children[4].position.y,players[0].children[4].position.z);
           boxPreviousPosition.copy(boxes[moveBoxIndex].position);
-          boxesBB[moveBoxIndex].setFromObject(boxes[moveBoxIndex]);
         }
         isMoving = true;
       } 
@@ -607,9 +611,10 @@ function onKeyPress(event) {
           isMoving = false;
           break;
         } else if (moveBoxIndex != -1){
+          players[0].children[5].position.set(players[0].children[5].position.x - pushingHandOffset, players[0].children[5].position.y,players[0].children[5].position.z);
+          players[0].children[4].position.set(players[0].children[4].position.x - pushingHandOffset, players[0].children[4].position.y,players[0].children[4].position.z);
           console.log(boxes[moveBoxIndex].position, "currentPosition");
           boxPreviousPosition.copy(boxes[moveBoxIndex].position);
-          boxesBB[moveBoxIndex].setFromObject(boxes[moveBoxIndex]);
         }
         isMoving = true; 
         break;
@@ -634,8 +639,9 @@ function onKeyPress(event) {
           isMoving = false;
           break;
         } else if (moveBoxIndex != -1){
+          players[0].children[5].position.set(players[0].children[5].position.x - pushingHandOffset, players[0].children[5].position.y,players[0].children[5].position.z);
+          players[0].children[4].position.set(players[0].children[4].position.x - pushingHandOffset, players[0].children[4].position.y,players[0].children[4].position.z);
           boxPreviousPosition.copy(boxes[moveBoxIndex].position);
-          boxesBB[moveBoxIndex].setFromObject(boxes[moveBoxIndex]);
         }
         
         isMoving = true; 
@@ -661,6 +667,8 @@ function onKeyPress(event) {
           isMoving = false;
           break;
         } else if (moveBoxIndex != -1){
+          players[0].children[5].position.set(players[0].children[5].position.x - pushingHandOffset, players[0].children[5].position.y,players[0].children[5].position.z);
+          players[0].children[4].position.set(players[0].children[4].position.x - pushingHandOffset, players[0].children[4].position.y,players[0].children[4].position.z);
           boxPreviousPosition.copy(boxes[moveBoxIndex].position);
         }
         isMoving = true; 
@@ -790,7 +798,7 @@ function animate() {
       // Smooth easing
       let oscilation = 0.5 * (1 - Math.cos(progress * Math.PI)); // From 0 to 1
       let armOscilation = Math.sin(progress * Math.PI) * (Math.PI / 2);
-
+      let armDistance = Math.sin(progress * Math.PI) * 0.2;
 
 
 
@@ -819,6 +827,9 @@ function animate() {
       if (progress >= 1) {
           //update box bounding boxes
           if (moveBoxIndex != -1){
+            //move arms back to original 
+            players[0].children[5].position.x += pushingHandOffset;
+            players[0].children[4].position.x += pushingHandOffset;
             boxesBB[moveBoxIndex].setFromObject(boxes[moveBoxIndex]);
           }
           playersBB[0].setFromObject(players[0]);
