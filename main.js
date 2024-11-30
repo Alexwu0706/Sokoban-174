@@ -931,7 +931,7 @@ fetch ('./maps.json')
 .then(response => response.json())
 .then(data => {
   mapData = data; 
-  initializeScene(2); //initialize scene with map 1
+  initializeScene(1); //initialize scene with map 1
   renderer.setAnimationLoop( animate );
 })
 .catch(error => {
