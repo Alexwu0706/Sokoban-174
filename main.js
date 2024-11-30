@@ -616,6 +616,7 @@ function onKeyPress(event) {
       }
       case 's': 
       if (canMove){
+        console.log(boxes_target)
         targetPosition.set(players[0].position.x, players[0].position.y, players[0].position.z + 1);
         previousPosition.copy(players[0].position);
         players[0].rotation.y = Math.PI / 2;
