@@ -792,6 +792,10 @@ function animate() {
       let progress = Math.min(animation_time_movement / duration, 1); // Clamp to [0, 1]
       // Smooth easing
       let oscilation = 0.5 * (1 - Math.cos(progress * Math.PI)); // From 0 to 1
+      let armOscilation = Math.sin(progress * Math.PI) * (Math.PI / 2);
+
+
+
 
       // Update the player's position
       if (moveBoxIndex != -1){
@@ -802,6 +806,11 @@ function animate() {
           boxPreviousPosition.y + oscilation * direction.y, 
           boxPreviousPosition.z + oscilation * direction.z
         );
+        //moving arms of the player
+        //left arm
+        players[0].children[5].rotation.z = -armOscilation;
+        //right arm
+        players[0].children[4].rotation.z = -armOscilation;
       }
 
       players[0].position.set(
