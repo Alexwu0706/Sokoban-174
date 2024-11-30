@@ -690,7 +690,7 @@ function onKeyPress(event) {
 
 
 
-
+let checkOnTarget = new THREE.Vector3(); 
 //translate target boxes l up and check for collision with boxes
 //check if all boxes are on their targets
 function checkTargetBoxes(){
@@ -698,16 +698,13 @@ function checkTargetBoxes(){
  let boxIsOnTarget = false;
  for (let i= 0; i < boxes_target.length; i++){
   boxIsOnTarget = false;
-  boxes_target[i].matrix.multiply(translationMatrix(0,l,0));
-  boxes_TargetBB[i].setFromObject(boxes_target[i]);
- for (let j = 0; j < boxesBB.length; j++){
- //if there is a collision with any box update count
-  if (boundingBoxCollisionCheck(boxesBB[j],boxes_TargetBB[i])){
-    boxIsOnTarget = true;
-  } 
- }
- boxes_target[i].matrix.multiply(translationMatrix(0,-l,0));
- boxes_TargetBB[i].setFromObject(boxes_target[i]);
+  checkOnTarget.set(boxes_target[i].position.x, boxes_target[i].position.y + l, boxes_target[i].position.z);
+  for (let j = 0; j < boxesBB.length; j++){
+  //if there is a collision with any box update count
+    if (playerCollisionCheck(checkOnTarget, boxesBB[j])){
+      boxIsOnTarget = true;
+    } 
+  }
   if (boxIsOnTarget){
     boxesOnTargets++;
   }
@@ -814,26 +811,24 @@ function animate() {
       );
       // Stop the animation when it reaches the end
       if (progress >= 1) {
+          //update box bounding boxes
           if (moveBoxIndex != -1){
             boxesBB[moveBoxIndex].setFromObject(boxes[moveBoxIndex]);
           }
+          playersBB[0].setFromObject(players[0]);
           canMove = true; 
           isMoving = false;
           moveBoxIndex = -1; 
           direction.set(0,0,0);
           animation_time_movement = 0; // Reset for future animations
           previousPosition.copy(players[0].position); // Update the start position
+          //check for win condition
+          if (checkTargetBoxes() == boxes_target.length){
+            resetM = true;
+            levelCleared = true;
+          }
       }
   }
-  //update boundary boxes
-  playersBB[0].setFromObject(players[0]);
-
-  //all boxes are on targets
-  if (checkTargetBoxes() == boxes_target.length){
-    resetM = true;
-    levelCleared = true;
-  }
-
  //camera transition
  // if (panLeft) {
  // let camTransform = new THREE.Matrix4();
