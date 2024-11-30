@@ -17,10 +17,3 @@ export function movingCollisionCheck(newPos, objectBB) {
 //use bounding box for walls to check collisions
 //update bounding box for boxes after each movement
 //can use a target position to check with the bounding box of others
-
-export function boundingBoxCollisionCheck(movingBB, objectBB) {
-    if (movingBB.containsBox(objectBB)) {
-        return true;
-    }
-    return false;
-}

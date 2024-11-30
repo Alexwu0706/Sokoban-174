@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { boundingBoxCollisionCheck, movingCollisionCheck } from './utils/collisionCheck';
+import { movingCollisionCheck } from './utils/collisionCheck';
 import { updateTitleText } from './utils/textDisplays';
 import { createHomePage, setupClickDetection } from './utils/homePage';
 
@@ -540,10 +540,6 @@ function boxCollisionWithWalls(boxIndex, direction){
 
 
 /////Interaction (Player Motion; Boxes-players interaction; Boxes-Boxes interaction)///////////////////////////
-let forward = false;
-let backward = false;
-let right = false;
-let left = false;
 let isMoving = false; 
 let canMove = true; 
 let moveBoxIndex = -1; 
