@@ -35,118 +35,10 @@ scene.add(directionalLight);
 const ambientLight = new THREE.AmbientLight(0x505050); // Soft white light
 scene.add(ambientLight);
 
-
-///Cube Geometry////////////////////////////////////////////////////////////////
-const l = 0.5
-const positions = new Float32Array([
- // Front face
- -l, -l, l, // 0
- l, -l, l, // 1
- l, l, l, // 2
- -l, l, l, // 3
-
- // Left face
- -l, -l, -l, // 4
- -l, -l, l, // 5
- -l, l, l, // 6 
- -l, l, -l, // 7
- 
- // Top face
- -l, l, l, // 8 
- l, l, l, // 9 
- l, l, -l, // 10 
- -l, l, -l, // 11 
- 
- // Bottom face
- -l, -l, l, // 12 
- l, -l, l, // 13
- l, -l, -l, // 14 
- -l, -l, -l, // 15 
- 
- // Right face
- l, -l, -l, // 16
- l, -l, l, // 17
- l, l, l, // 18
- l, l, -l, // 19
-
- // Back face
- -l, -l, -l, // 20
- l, -l, -l, // 21
- l, l, -l, // 22
- -l, l, -l, // 23
- ]);
- 
- const indices = [
- //Use Right hand Rule to determine the order of your triangular faces (Thumb is ur desire face, your vertices need to follow the direction of curl)
- // Front face
- 0, 1, 2,
- 0, 2, 3,
- 
- // Left face
- 4, 5, 6,
- 4, 6, 7,
- 
- // Top face
- 8, 9, 10,
- 8, 10, 11,
-
- // Bottom face
- 15, 14, 13,
- 15, 13, 12,
- 
- // Right face
- 19, 18, 17,
- 19, 17, 16,
-
- // Back face
- 20, 23, 22,
- 20, 22, 21,
- ];
- 
- // Compute normals
- const normals = new Float32Array([
- // Front face(Z axis)
- 0, 0, 1,
- 0, 0, 1,
- 0, 0, 1,
- 0, 0, 1,
- 
- // Left face(X axis)
- -1, 0, 0,
- -1, 0, 0,
- -1, 0, 0,
- -1, 0, 0,
- 
- // Top face(Y axis)
- 0, 1, 0,
- 0, 1, 0,
- 0, 1, 0,
- 0, 1, 0,
- 
- // Bottom face
- 0, -1, 0,
- 0, -1, 0,
- 0, -1, 0,
- 0, -1, 0,
- 
- // Right face
- 1, 0, 0,
- 1, 0, 0,
- 1, 0, 0,
- 1, 0, 0,
-
- // Back face
- 0, 0, -1,
- 0, 0, -1,
- 0, 0, -1,
- 0, 0, -1,
- ]);
-
 //game states
-
 let gameStart = false; 
 let expandedHomepage = false;
-
+const l = 0.5;
 
 // Create a Star Shape
 function StarShape(outerRadius, innerRadius, points) {
@@ -174,10 +66,6 @@ const outerRadius = 0.2;
 const innerRadius = 0.1;
 const points = 5;
 const starShape = StarShape(outerRadius, innerRadius, points);
-const custom_cube_geometry = new THREE.BufferGeometry();
-custom_cube_geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-custom_cube_geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
-custom_cube_geometry.setIndex(new THREE.BufferAttribute(new Uint16Array(indices), 1));
 let playerPA_geometry = new THREE.SphereGeometry(1/4); //Head
 let playerPB_geometry = new THREE.ConeGeometry(1/3); //Body
 let playerPC_geometry = new THREE.ConeGeometry(1/8,1/2); //Hat
@@ -187,52 +75,19 @@ let boxPA_geometry = new THREE.ExtrudeGeometry(starShape, {
  depth: 0.2, 
  bevelEnabled: false, //not to smooth the edge
 });
+let wall_geometry = new THREE.BoxGeometry( 1, 1, 1 ); 
 let boxPB_geometry = new THREE.SphereGeometry(1 / 2.5); 
 let sky_geometry = new THREE.BoxGeometry(50, 50, 50);
 
-function translationMatrix(tx, ty, tz) {
- return new THREE.Matrix4().set(
- 1, 0, 0, tx,
- 0, 1, 0, ty,
- 0, 0, 1, tz,
- 0, 0, 0, 1
- );
-}
-
-function rotationMatrixY(theta) {
- return new THREE.Matrix4().set(
- Math.cos(theta), 0, Math.sin(theta), 0,
- 0, 1, 0, 0,
- -Math.sin(theta), 0, Math.cos(theta), 0,
- 0, 0, 0, 1
- );
-}
-
-function rotationMatrixZ(theta) {
- return new THREE.Matrix4().set(
- Math.cos(theta),-1*Math.sin(theta), 0, 0,
- Math.sin(theta), Math.cos(theta), 0, 0,
- 0, 0, 1, 0,
- 0, 0, 0, 1, 
- );
-}
-
-function scalingMatrix(sx, sy, sz) {
- return new THREE.Matrix4().set(
- sx, 0 , 0, 0,
- 0, sy, 0, 0,
- 0, 0, sz, 0,
- 0, 0, 0, 1,
- );
-}
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
 // Shaders
 
 ///Initialization////////////////////////////////////////////////////////////////
 const wall_material = new THREE.MeshPhongMaterial({
  color: 0x808080, //Gray color
- shininess: 100 
+ shininess: 100, 
+ transparent: true, 
+ opacity : 0.1
 });
 const playerPA_material = new THREE.MeshPhongMaterial({
  color: 0xFFFFFF, // Pure white color
@@ -250,14 +105,6 @@ const playerPD_material = new THREE.MeshPhongMaterial({
  color: 0x00ff00, // Green color
  shininess: 100 
 }); 
-const playerPE_material = new THREE.MeshPhongMaterial({
- color: 0xFFFFFF, // Pure white color
- shininess: 100 
-})
-const playerPF_material = new THREE.MeshPhongMaterial({
- color: 0xFFFFFF, // Pure white color
- shininess: 100 
-})
 const boxPA_material = new THREE.MeshPhongMaterial({
  color: 0xFFAA00, // Pure white color
  shininess: 100 
@@ -265,7 +112,7 @@ const boxPA_material = new THREE.MeshPhongMaterial({
 const boxPB_material = new THREE.MeshPhongMaterial({
  color: 0xFFFFFF, // Pure white color
  transparent: true, 
- opacity: 0.3, 
+ opacity: 0.3
 })
 const boxPC_material = new THREE.MeshPhongMaterial({
  color: 0xFFFFFF, // Pure white color
@@ -356,7 +203,7 @@ function initializeScene(flag){
  let playerPA = new THREE.Mesh(playerPA_geometry,playerPA_material);
  let playerPB = new THREE.Mesh(playerPB_geometry,playerPB_material);
  let playerPC = new THREE.Mesh(playerPC_geometry,playerPC_material);
- let playerPD = new THREE.Mesh(custom_cube_geometry,playerPD_material);
+ let playerPD = new THREE.Mesh(wall_geometry,playerPD_material);
  let playerRightHand = new THREE.Mesh(playerRightHand_geometry,playerPD_material);
  let playerLeftHand = new THREE.Mesh(playerLeftHand_geometry,playerPD_material);
  playerRightHand.position.set(0,playerHands_Height,-0.3);
@@ -389,7 +236,7 @@ function initializeScene(flag){
 
  //add walls to scene
  for (let i = 0; i < Wx.length; i++) {
-  let wall = new THREE.Mesh(custom_cube_geometry, wall_material);
+  let wall = new THREE.Mesh(wall_geometry, wall_material);
   let wallBB = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3()); //Takes in Far and Near points
   wallBB.setFromObject(wall); //Set the bounding box of the wall
   wallsBB.push(wallBB);
@@ -401,7 +248,7 @@ function initializeScene(flag){
   let box = new THREE.Group();
   let boxPA = new THREE.Mesh(boxPA_geometry,boxPA_material); //stars
   let boxPB = new THREE.Mesh(boxPB_geometry,boxPB_material); //transparent sphere
-  let boxPC = new THREE.Mesh(custom_cube_geometry,boxPC_material); //Just for Boundary detection, invisible
+  let boxPC = new THREE.Mesh(wall_geometry,boxPC_material); //Just for Boundary detection, invisible
   boxPA.position.set(0,star_Height,0);
   boxPB.position.set(0,star_Height,0);
   boxPC.position.set(0,0,0); //Just for Boundary detection, invisible
@@ -409,7 +256,7 @@ function initializeScene(flag){
   box.add(boxPB);
   box.add(boxPC);
   boxPC.visible = false; 
-  let box_target = new THREE.Mesh(custom_cube_geometry, box_material);
+  let box_target = new THREE.Mesh(wall_geometry, box_material);
 
   let boxBB = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
   let box_TargetBB = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
@@ -426,7 +273,7 @@ function initializeScene(flag){
  }
  //add ground tiles to scene
  for (let i=0; i< Gx.length; i++){
-  let ground = new THREE.Mesh(custom_cube_geometry, ground_material);
+  let ground = new THREE.Mesh(wall_geometry, ground_material);
   grounds.push(ground);
   scene.add(ground);
  }
@@ -773,11 +620,6 @@ function animate() {
  players[0].children[2].position.y = floating_player + playerPC_Height; 
  players[0].children[4].position.y = floating_player + playerHands_Height;
  players[0].children[5].position.y = floating_player + playerHands_Height;
-
- //(hat_Angle , 0, 0); (0, playerPC_Height, hat_Width) forward
- //(-hat_Angle , 0, 0); (0, playerPC_Height, -hat_Width) backward 
- //(0 , 0, hat_Angle); (-hat_Width, playerPC_Height, 0) Right
- //(0 , 0, -hat_Angle); (hat_Width, playerPC_Height, 0) Left
 
  //Box Self-Motion
  let floating_boxes = 0.2*Math.sin(animation_time*2*Math.PI/T_boxes+Math.PI/2);
