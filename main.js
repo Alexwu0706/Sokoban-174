@@ -87,7 +87,7 @@ const wall_material = new THREE.MeshPhongMaterial({
  color: 0x808080, //Gray color
  shininess: 100, 
  transparent: true, 
- opacity : 0.1
+ opacity : 0
 });
 const playerPA_material = new THREE.MeshPhongMaterial({
  color: 0xFFFFFF, // Pure white color
