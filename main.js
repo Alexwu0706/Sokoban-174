@@ -15,7 +15,6 @@ const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.inner
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setAnimationLoop(animate);
 renderer.toneMapping = THREE.ReinhardToneMapping;
 
 const renderScene = new RenderPass(scene, camera);
