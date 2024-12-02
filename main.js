@@ -3,14 +3,36 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { movingCollisionCheck } from './utils/collisionCheck';
 import { updateTitleText } from './utils/textDisplays';
 import { createHomePage, setupClickDetection } from './utils/homePage';
-
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+let composer;
 const scene = new THREE.Scene();
 
 //THREE.PerspectiveCamera( fov angle, aspect ratio, near depth, far depth );
 const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 1000 );
 
 const renderer = new THREE.WebGLRenderer();
-renderer.setSize( window.innerWidth, window.innerHeight );
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setAnimationLoop(animate);
+renderer.toneMapping = THREE.ReinhardToneMapping;
+
+const renderScene = new RenderPass(scene, camera);
+
+const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+bloomPass.threshold = 0;
+bloomPass.strength = 0.2;
+bloomPass.radius = 1;
+
+const outputPass = new OutputPass();
+
+composer = new EffectComposer(renderer);
+composer.addPass(renderScene);
+composer.addPass(bloomPass);
+composer.addPass(outputPass);
+
+
 document.body.appendChild( renderer.domElement );
 const startGameCameraPosition = new THREE.Vector3(0, 10, 5);
 const homeScreenCameraPosition = new THREE.Vector3(0, 12, 10);
@@ -24,15 +46,8 @@ let playerRotationY = 0;
 
 // Project
 // Setting up the lights
-const pointLight = new THREE.PointLight(0xffffff, 100, 100);
-pointLight.position.set(5, 5, 5); // Position the light
-scene.add(pointLight);
 
-const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-directionalLight.position.set(0.5, .0, 1.0).normalize();
-scene.add(directionalLight);
-
-const ambientLight = new THREE.AmbientLight(0x505050); // Soft white light
+const ambientLight = new THREE.AmbientLight(0xd2d8f2, 0.02);
 scene.add(ambientLight);
 
 //game states
@@ -76,8 +91,7 @@ let boxPA_geometry = new THREE.ExtrudeGeometry(starShape, {
  bevelEnabled: false, //not to smooth the edge
 });
 let wall_geometry = new THREE.BoxGeometry( 1, 1, 1 ); 
-let boxPB_geometry = new THREE.SphereGeometry(1 / 2.5); 
-let sky_geometry = new THREE.BoxGeometry(50, 50, 50);
+let boxPB_geometry = new THREE.SphereGeometry(1 / 2.5);
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 // Shaders
@@ -90,24 +104,26 @@ const wall_material = new THREE.MeshPhongMaterial({
  opacity : 0
 });
 const playerPA_material = new THREE.MeshPhongMaterial({
- color: 0xFFFFFF, // Pure white color
+    transparent: true,
+    color: 0xdbdfe3, // Pure white color
  shininess: 100 
 });
 const playerPB_material = new THREE.MeshPhongMaterial({
- color: 0x00ff00, // Light blue color
- shininess: 100 
+    color: 0x76a6d6, // Light blue color
+    shininess: 0.5
 });
 const playerPC_material = new THREE.MeshPhongMaterial({
- color: 0x0000FF, // Deep blue color
- shininess: 100 
+    color: 0x76a6d6, // Hat
+ shininess: 0.5
 });
 const playerPD_material = new THREE.MeshPhongMaterial({
- color: 0x00ff00, // Green color
- shininess: 100 
+    color: 0x76a6d6, // Body
+ shininess: 0.5
 }); 
 const boxPA_material = new THREE.MeshPhongMaterial({
- color: 0xFFAA00, // Pure white color
- shininess: 100 
+    color: 0xf9f9f6, // Star
+    shininess: 100,
+    emissive: 0xf9f9f6
 })
 const boxPB_material = new THREE.MeshPhongMaterial({
  color: 0xFFFFFF, // Pure white color
@@ -118,23 +134,20 @@ const boxPC_material = new THREE.MeshPhongMaterial({
  color: 0xFFFFFF, // Pure white color
  shininess: 100 
 })
-const box_material = new THREE.MeshPhongMaterial({
- color: 0xffff00, // Yellow color
- shininess: 100 
+const goal_texture = new THREE.TextureLoader().load('assets/finalproj_goal_tile.png');
+goal_texture.colorSpace = THREE.SRGBColorSpace;
+const box_material = new THREE.MeshStandardMaterial({
+ map: goal_texture
 });
-const ground_material = new THREE.MeshPhongMaterial({
- color: 0xffffff, // White color
- shininess: 100 
+const ground_texture = new THREE.TextureLoader().load('assets/finalproj_floor_tile.png');
+ground_texture.colorSpace = THREE.SRGBColorSpace;
+const ground_material = new THREE.MeshStandardMaterial({
+    map: ground_texture
 });
 // skybox texture needs modification
-const sky_texture = new THREE.TextureLoader().load('assets/finalproj_skybox_top_TEMP.png');
-sky_texture.wrapS = THREE.RepeatWrapping;
-sky_texture.wrapT = THREE.RepeatWrapping;
-const sky_material = new THREE.MeshStandardMaterial({
-    map: sky_texture,
-    side: THREE.BackSide
-});
-
+const sky_texture = new THREE.CubeTextureLoader().load(['assets/finalproj_skybox_top_TEMP.png', 'assets/finalproj_skybox_top_TEMP.png', 'assets/finalproj_skybox_top_TEMP.png', 'assets/finalproj_skybox_top_TEMP.png', 'assets/finalproj_skybox_top_TEMP.png', 'assets/finalproj_skybox_top_TEMP.png']);
+sky_texture.colorSpace = THREE.SRGBColorSpace;
+scene.background = sky_texture;
 
 
 //storing map info 
@@ -191,10 +204,6 @@ function initializeScene(flag){
  
  console.log(Wx, "This is the data fetched for walls X");
 
- // Add skybox to scene
- let skybox = new THREE.Mesh(sky_geometry, sky_material);
- scene.add(skybox);
-
  //add players to the scene
  playerPosition.set(0,0,0); //Initial position of player
  playerRotationY = 0; //Initial rotation of player
@@ -248,13 +257,15 @@ function initializeScene(flag){
   let box = new THREE.Group();
   let boxPA = new THREE.Mesh(boxPA_geometry,boxPA_material); //stars
   let boxPB = new THREE.Mesh(boxPB_geometry,boxPB_material); //transparent sphere
-  let boxPC = new THREE.Mesh(wall_geometry,boxPC_material); //Just for Boundary detection, invisible
+     let boxPC = new THREE.Mesh(wall_geometry, boxPC_material); //Just for Boundary detection, invisible
+     let glowLight = new THREE.PointLight(0xf9f9f6, 0.5, 2, 1);
   boxPA.position.set(0,star_Height,0);
   boxPB.position.set(0,star_Height,0);
   boxPC.position.set(0,0,0); //Just for Boundary detection, invisible
+     boxPA.add(glowLight);
   box.add(boxPA);
   box.add(boxPB);
-  box.add(boxPC);
+     box.add(boxPC);
   boxPC.visible = false; 
   let box_target = new THREE.Mesh(wall_geometry, box_material);
 
@@ -588,7 +599,6 @@ let animation_time_movement = 0;
 
 
 function animate() {
- renderer.render( scene, camera );
  controls.update();
 
  delta_animation_time = clock.getDelta();
@@ -757,6 +767,7 @@ function animate() {
   }
 
  //Interaction Implementation
+ composer.render();
  
 }
 
