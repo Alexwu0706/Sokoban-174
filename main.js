@@ -45,6 +45,23 @@ let playerRotationY = 0;
 
 // Project
 // Setting up the lights
+function translationMatrix(tx, ty, tz) {
+	return new THREE.Matrix4().set(
+		1, 0, 0, tx,
+		0, 1, 0, ty,
+		0, 0, 1, tz,
+		0, 0, 0, 1
+	);
+}
+
+function rotationMatrixY(theta) {
+    return new THREE.Matrix4().set(
+        Math.cos(theta), 0, Math.sin(theta), 0,
+        0, 1, 0, 0,
+        -Math.sin(theta), 0, Math.cos(theta), 0,
+        0, 0, 0, 1
+    );
+}
 
 const ambientLight = new THREE.AmbientLight(0xd2d8f2, 0.02);
 scene.add(ambientLight);
@@ -703,31 +720,31 @@ function animate() {
       }
   }
  //camera transition
- // if (panLeft) {
- // let camTransform = new THREE.Matrix4();
- // camTransform.multiplyMatrices(translationMatrix(camLastPos.x, camLastPos.y, camLastPos.z), camTransform);
- // camTransform.multiplyMatrices(rotationMatrixY(90), camTransform);
- // let cameraPosition = new THREE.Vector3();
- // cameraPosition.setFromMatrixPosition(camTransform);
- // // lerp is a little janky, makes the camera move upward which I don't like
- // // If there is a way to do a smooth movement while keeping the camera's z-position the same it would be better
- // camera.position.lerp(cameraPosition, 0.12);
- // if (camera.position.distanceTo(cameraPosition) < 0.01) {
- // panLeft = false;
- // camLastPos = cameraPosition;
- // }
- // } else if (panRight) {
- // let camTransform = new THREE.Matrix4();
- // camTransform.multiplyMatrices(translationMatrix(camLastPos.x, camLastPos.y, camLastPos.z), camTransform);
- // camTransform.multiplyMatrices(rotationMatrixY(-90), camTransform);
- // let cameraPosition = new THREE.Vector3();
- // cameraPosition.setFromMatrixPosition(camTransform);
- // camera.position.lerp(cameraPosition, 0.12);
- // if (camera.position.distanceTo(cameraPosition) < 0.01) {
- // panRight = false;
- // camLastPos = cameraPosition;
- // }
- // }
+// if (panLeft) {
+// let camTransform = new THREE.Matrix4();
+// camTransform.multiplyMatrices(translationMatrix(camLastPos.x, camLastPos.y, camLastPos.z), camTransform);
+// camTransform.multiplyMatrices(rotationMatrixY(90), camTransform);
+// let cameraPosition = new THREE.Vector3();
+// cameraPosition.setFromMatrixPosition(camTransform);
+// // lerp is a little janky, makes the camera move upward which I don't like
+// // If there is a way to do a smooth movement while keeping the camera's z-position the same it would be better
+// camera.position.lerp(cameraPosition, 0.12);
+// if (camera.position.distanceTo(cameraPosition) < 0.01) {
+// panLeft = false;
+// camLastPos = cameraPosition;
+// }
+// } else if (panRight) {
+// let camTransform = new THREE.Matrix4();
+// camTransform.multiplyMatrices(translationMatrix(camLastPos.x, camLastPos.y, camLastPos.z), camTransform);
+// camTransform.multiplyMatrices(rotationMatrixY(-90), camTransform);
+// let cameraPosition = new THREE.Vector3();
+// cameraPosition.setFromMatrixPosition(camTransform);
+// camera.position.lerp(cameraPosition, 0.12);
+// if (camera.position.distanceTo(cameraPosition) < 0.01) {
+// panRight = false;
+// camLastPos = cameraPosition;
+// }
+// }
 
 
 
