@@ -547,8 +547,9 @@ function onKeyPress(event) {
 
         //update controls
         currentControls = updateDirection(previousCameraRotation);
-        panLeft = true; // Rotate camera clockwise
+        panRight = true; // Rotate camera clockwise
       }
+      break;
 
       case 'r':
       resetM = true;
@@ -732,17 +733,25 @@ function animate() {
     }
   }
 
-  // if (panRight) {
-  //   canPan = false;
-  //   //can have a hashmap of directions
-  //   const newAngle = angle - Math.PI / 2;
-  //   angle = newAngle
-  //   // Update camera position (keeping the same radius)
-  //   camera.position.x = cameraRadius * Math.cos(newAngle);
-  //   camera.position.z = cameraRadius * Math.sin(newAngle);
-  //   panRight = false; 
-  //   canPan = true; //add if statement to wait for animation to finish
-  // }
+  if (panRight) {
+    canPan = false;
+    //can have a hashmap of directions
+    camera_animation_time += delta_animation_time;
+    let progress = Math.min(camera_animation_time / cameraRotationDuration, 1); // Clamp to [0, 1]
+    // Smooth easing
+    let oscilation = (Math.PI/4) * (1 - Math.cos(progress * Math.PI)); // From 0 to PI/2
+    let newAngle = angle - oscilation;
+    // Update camera position (keeping the same radius)
+    camera.position.x = cameraRadius * Math.sin(newAngle);
+    camera.position.z = cameraRadius * Math.cos(newAngle);
+
+    if (progress >= 1) {
+      angle = newAngle;
+      panRight = false; 
+      canPan = true; //add if statement to wait for animation to finish
+      camera_animation_time = 0;
+    }
+  }
 
 
 
