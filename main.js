@@ -417,6 +417,11 @@ scene.add(homePage);
 //only allow player to move if game starts
 window.addEventListener('keydown', onKeyPress); // onKeyPress is called each time a key is pressed
 setupClickDetection(camera, homePage)
+// w = forward ; s = backward; a = left ; d = right
+//cam=0,10,10  forward = w backward = s left = a right = d
+//cam=10,10,0  forward = a backward = d left = s right = w
+//cam=0,10,-10 forward = s backward = w left = d right = a
+//cam=-10,10,0 forward = d backward = a left = w right = s
 function onKeyPress(event) {
   if(gameStart){
     switch (event.key) {
