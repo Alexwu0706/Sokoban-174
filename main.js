@@ -396,6 +396,25 @@ function boxCollisionWithWalls(boxIndex, direction){
   return colliding
 }
 
+//depending on current radians, update the direction of each movement
+//returns a set of directions and rotations for each of radian cases
+
+function updateDirection(radians){
+  switch(radians){
+    case 0:
+      return new THREE.Vector3(-1,0,0);
+    case Math.PI/2:
+      return new THREE.Vector3(0,0,-1);
+    case Math.PI:
+      return new THREE.Vector3(1,0,0);
+    case 3*Math.PI/2:
+      return new THREE.Vector3(0,0,1);
+    default:
+      console.log("none")
+      break;
+  }
+}
+
 
 /////Interaction (Player Motion; Boxes-players interaction; Boxes-Boxes interaction)///////////////////////////
 let isMoving = false; 
@@ -403,6 +422,7 @@ let canMove = true;
 let moveBoxIndex = -1; 
 let panLeft = false;
 let panRight = false;
+let canPan = true;
 let resetM = false;
 let pushingHandOffset = 0.2;
 let playerRotation = 0; 
@@ -414,6 +434,8 @@ let boxPreviousPosition = new THREE.Vector3();
 let previousLeftHandPosition = new THREE.Vector3();
 let previousRightHandPosition = new THREE.Vector3();
 let cameraTargetPosition = new THREE.Vector3(); 
+let previousCameraRotation = 0; //camera rotation in degrees
+let cameraRadius = 5; // Distance from the camera to the origin
 
 //add homePage to scene initially
 let homePage = createHomePage();
@@ -480,12 +502,17 @@ function onKeyPress(event) {
         break;
 
       case 'q':
-      panLeft = true; // Rotate camera counterclockwise
+      if (canPan){
+        previousCameraRotation = previousCameraRotation + 90;
+        panLeft = true; // Rotate camera counterclockwise
+      }
       break;
 
       case 'e':
-      panRight = true; // Rotate camera clockwise
-      break;
+      if (canPan){
+        previousCameraRotation = previousCameraRotation - 90;
+        panLeft = true; // Rotate camera clockwise
+      }
 
       case 'r':
       resetM = true;
@@ -654,17 +681,27 @@ function animate() {
 
 
   if (panLeft) {  
-    console.log("panning left");
-    //start from a set position and rotate 90 clockwise
-    //update how direction is set
+    canPan = false;
     //can have a hashmap of directions
     const angle = Math.atan2(camera.position.x, camera.position.z);
-    // Add 90 degrees in radians (clockwise rotation)
     const newAngle = angle - Math.PI / 2;
     // Update camera position (keeping the same radius)
-    camera.position.x = 5 * Math.sin(newAngle);
-    camera.position.z = 5 * Math.cos(newAngle);
+    camera.position.x = cameraRadius * Math.sin(newAngle);
+    camera.position.z = cameraRadius * Math.cos(newAngle);
     panLeft = false; 
+    canPan = true;
+  }
+
+  if (panRight) {
+    canPan = false;
+    //can have a hashmap of directions
+    const angle = Math.atan2(camera.position.x, camera.position.z);
+    const newAngle = angle + Math.PI / 2;
+    // Update camera position (keeping the same radius)
+    camera.position.x = cameraRadius * Math.cos(newAngle);
+    camera.position.z = cameraRadius * Math.sin(newAngle);
+    panRight = false; 
+    canPan = true;
   }
 
 
