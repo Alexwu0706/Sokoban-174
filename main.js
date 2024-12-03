@@ -399,22 +399,6 @@ function boxCollisionWithWalls(boxIndex, direction){
 //depending on current radians, update the direction of each movement
 //returns a set of directions and rotations for each of radian cases
 
-function updateDirection(radians){
-  switch(radians){
-    case 0:
-      return new THREE.Vector3(-1,0,0);
-    case Math.PI/2:
-      return new THREE.Vector3(0,0,-1);
-    case Math.PI:
-      return new THREE.Vector3(1,0,0);
-    case 3*Math.PI/2:
-      return new THREE.Vector3(0,0,1);
-    default:
-      console.log("none")
-      break;
-  }
-}
-
 
 /////Interaction (Player Motion; Boxes-players interaction; Boxes-Boxes interaction)///////////////////////////
 let isMoving = false; 
@@ -436,13 +420,12 @@ let previousRightHandPosition = new THREE.Vector3();
 let cameraTargetPosition = new THREE.Vector3(); 
 let previousCameraRotation = 0; //camera rotation in degrees
 let cameraRadius = 5; // Distance from the camera to the origin
-
+let currentControls = updateDirection(previousCameraRotation);
 //add homePage to scene initially
 let homePage = createHomePage();
 scene.add(homePage);
 
 //only allow player to move if game starts
-window.addEventListener('keydown', onKeyPress); // onKeyPress is called each time a key is pressed
 setupClickDetection(camera, homePage)
 
 
@@ -474,43 +457,96 @@ function movePlayer(moveDirection, rotation){
   } 
 }
 
+function updateDirection(degrees){
+  console.log(degrees)
+  switch(degrees){
+    case 0:
+      return {
+        "W": [new THREE.Vector3(0,0,-1), -Math.PI/2],
+        "A": [new THREE.Vector3(-1,0,0), 0],
+        "S": [new THREE.Vector3(0,0,1), Math.PI/2],
+        "D": [new THREE.Vector3(1,0,0), Math.PI], 
+      }
+    case 90:
+      return {
+        "W": [new THREE.Vector3(1,0,0), -Math.PI],
+        "A": [new THREE.Vector3(0,0,-1), -Math.PI/2],
+        "S": [new THREE.Vector3(-1,0,0), 0],
+        "D": [new THREE.Vector3(0,0,1), Math.PI/2],
+      }
+    case 180:
+      return {
+        "W": [new THREE.Vector3(0,0,1), Math.PI/2],
+        "A": [new THREE.Vector3(1,0,0), Math.PI],
+        "S": [new THREE.Vector3(0,0,-1), -Math.PI/2],
+        "D": [new THREE.Vector3(-1,0,0), 0],
+      }
+    case 270:
+      return {
+        "W": [new THREE.Vector3(-1,0,0), 0],
+        "A": [new THREE.Vector3(0,0,1), Math.PI/2],
+        "S": [new THREE.Vector3(1,0,0), Math.PI],
+        "D": [new THREE.Vector3(0,0,-1), -Math.PI/2],
+      }
+    default:
+      console.log("none")
+      break;
+  }
+}
+
+window.addEventListener('keydown', onKeyPress); // onKeyPress is called each time a key is pressed
 function onKeyPress(event) {
   if(gameStart){
     switch (event.key) {
 
       case 'w': 
-        playerRotation = -Math.PI/2;
-        moveDirection = new THREE.Vector3(0,0,-1);
+        playerRotation = currentControls["W"][1];
+        moveDirection = currentControls["W"][0];
+        console.log(currentControls);
         movePlayer(moveDirection, playerRotation);
         break;
 
       case 'a': 
-        playerRotation = 0;
-        moveDirection = new THREE.Vector3(-1,0,0);
+        playerRotation = currentControls["A"][1];
+        moveDirection = currentControls["A"][0];
         movePlayer(moveDirection, playerRotation);
         break;
       case 's': 
-        playerRotation = Math.PI/2;
-        moveDirection = new THREE.Vector3(0,0,1);
+        playerRotation = currentControls["S"][1];
+        moveDirection = currentControls["S"][0];
         movePlayer(moveDirection, playerRotation);
         break;
 
       case 'd': 
-        playerRotation = Math.PI;
-        moveDirection = new THREE.Vector3(1,0,0);
+        playerRotation = currentControls["D"][1];
+        moveDirection = currentControls["D"][0];
         movePlayer(moveDirection, playerRotation);
         break;
 
       case 'q':
       if (canPan){
-        previousCameraRotation = previousCameraRotation + 90;
+        if(previousCameraRotation == 270){
+          previousCameraRotation = 0;
+        } else {
+          previousCameraRotation += 90
+        }
+
+        //update controls
+        currentControls = updateDirection(previousCameraRotation);
         panLeft = true; // Rotate camera counterclockwise
       }
       break;
 
       case 'e':
       if (canPan){
-        previousCameraRotation = previousCameraRotation - 90;
+        if (previousCameraRotation == 0){
+          previousCameraRotation = 270;
+        } else {
+          previousCameraRotation -= 90
+        }
+
+        //update controls
+        currentControls = updateDirection(previousCameraRotation);
         panLeft = true; // Rotate camera clockwise
       }
 
@@ -547,12 +583,6 @@ function checkTargetBoxes(){
  }
  return boxesOnTargets
 
-}
-
-function calculateCameraTargetPosition() {
-  const quaternion = new THREE.Quaternion();
-  quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2); // Rotate 90 degrees around the Y-axis
-  cameraTargetPosition.copy(camera.position).applyQuaternion(quaternion);
 }
 
 ///animation////////////////////////////////////////////////////////////////
@@ -634,7 +664,6 @@ function animate() {
 
       // Update the player's position
       if (moveBoxIndex != -1){
-        console.log(boxPreviousPosition, "boxPreviousPosition");
         //console.log(boxes[moveBoxIndex].position);
         boxes[moveBoxIndex].position.set(
           boxPreviousPosition.x + oscilation * direction.x,
@@ -689,7 +718,7 @@ function animate() {
     camera.position.x = cameraRadius * Math.sin(newAngle);
     camera.position.z = cameraRadius * Math.cos(newAngle);
     panLeft = false; 
-    canPan = true;
+    canPan = true; //add if statement to wait for animation to finish
   }
 
   if (panRight) {
@@ -698,10 +727,10 @@ function animate() {
     const angle = Math.atan2(camera.position.x, camera.position.z);
     const newAngle = angle + Math.PI / 2;
     // Update camera position (keeping the same radius)
-    camera.position.x = cameraRadius * Math.cos(newAngle);
-    camera.position.z = cameraRadius * Math.sin(newAngle);
+    camera.position.x = cameraRadius * Math.sin(newAngle);
+    camera.position.z = cameraRadius * Math.cos(newAngle);
     panRight = false; 
-    canPan = true;
+    canPan = true; //add if statement to wait for animation to finish
   }
 
 
