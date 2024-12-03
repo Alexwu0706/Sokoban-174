@@ -45,23 +45,6 @@ let playerRotationY = 0;
 
 // Project
 // Setting up the lights
-function translationMatrix(tx, ty, tz) {
-	return new THREE.Matrix4().set(
-		1, 0, 0, tx,
-		0, 1, 0, ty,
-		0, 0, 1, tz,
-		0, 0, 0, 1
-	);
-}
-
-function rotationMatrixY(theta) {
-    return new THREE.Matrix4().set(
-        Math.cos(theta), 0, Math.sin(theta), 0,
-        0, 1, 0, 0,
-        -Math.sin(theta), 0, Math.cos(theta), 0,
-        0, 0, 0, 1
-    );
-}
 
 const ambientLight = new THREE.AmbientLight(0xd2d8f2, 0.02);
 scene.add(ambientLight);
@@ -434,22 +417,17 @@ scene.add(homePage);
 //only allow player to move if game starts
 window.addEventListener('keydown', onKeyPress); // onKeyPress is called each time a key is pressed
 setupClickDetection(camera, homePage)
-// w = forward ; s = backward; a = left ; d = right
-//cam=0,10,10  forward = w backward = s left = a right = d
-//cam=10,10,0  forward = a backward = d left = s right = w
-//cam=0,10,-10 forward = s backward = w left = d right = a
-//cam=-10,10,0 forward = d backward = a left = w right = s
 function onKeyPress(event) {
   if(gameStart){
     switch (event.key) {
 
       case 'w': 
       if (canMove){
-        targetPosition.set(players[0].position.x, players[0].position.y, players[0].position.z - 1);
+        direction.set(0,0,-1);
+        targetPosition.set(players[0].position.x + direction.x, players[0].position.y + direction.y, players[0].position.z + direction.z);
         previousPosition.copy(players[0].position);
         //rotate player no matter if it moves or not
         players[0].rotation.y = -Math.PI / 2;
-        direction.set(0,0,-1);
         //check if player moving into wall
         if (playerCollisionWall(targetPosition)){
           isMoving = false;
@@ -473,10 +451,10 @@ function onKeyPress(event) {
 
       case 'a': 
       if (canMove){
-        targetPosition.set(players[0].position.x - 1, players[0].position.y, players[0].position.z);
+        direction.set(-1,0,0);
+        targetPosition.set(players[0].position.x + direction.x, players[0].position.y + direction.y, players[0].position.z + direction.z);
         previousPosition.copy(players[0].position);
         players[0].rotation.y = 0;
-        direction.set(-1,0,0);
         //check if player moving into wall
         if (playerCollisionWall(targetPosition)){
           isMoving = false;
@@ -500,11 +478,11 @@ function onKeyPress(event) {
       }
       case 's': 
       if (canMove){
-        console.log(boxes_target)
-        targetPosition.set(players[0].position.x, players[0].position.y, players[0].position.z + 1);
+        //only direction needs to be edited
+        direction.set(0,0,1);
+        targetPosition.set(players[0].position.x + direction.x, players[0].position.y + direction.y, players[0].position.z + direction.z);
         previousPosition.copy(players[0].position);
         players[0].rotation.y = Math.PI / 2;
-        direction.set(0,0,1);
         //check if player moving into wall
         if (playerCollisionWall(targetPosition)){
           isMoving = false;
@@ -529,10 +507,10 @@ function onKeyPress(event) {
 
       case 'd': 
       if (canMove){
-        targetPosition.set(players[0].position.x + 1, players[0].position.y, players[0].position.z);
+        direction.set(1,0,0);
+        targetPosition.set(players[0].position.x + direction.x, players[0].position.y + direction.y, players[0].position.z + direction.z);
         previousPosition.copy(players[0].position);
         players[0].rotation.y = Math.PI;
-        direction.set(1,0,0);
         //check if player moving into wall
         if (playerCollisionWall(targetPosition)){
           isMoving = false;
@@ -720,31 +698,31 @@ function animate() {
       }
   }
  //camera transition
-// if (panLeft) {
-// let camTransform = new THREE.Matrix4();
-// camTransform.multiplyMatrices(translationMatrix(camLastPos.x, camLastPos.y, camLastPos.z), camTransform);
-// camTransform.multiplyMatrices(rotationMatrixY(90), camTransform);
-// let cameraPosition = new THREE.Vector3();
-// cameraPosition.setFromMatrixPosition(camTransform);
-// // lerp is a little janky, makes the camera move upward which I don't like
-// // If there is a way to do a smooth movement while keeping the camera's z-position the same it would be better
-// camera.position.lerp(cameraPosition, 0.12);
-// if (camera.position.distanceTo(cameraPosition) < 0.01) {
-// panLeft = false;
-// camLastPos = cameraPosition;
-// }
-// } else if (panRight) {
-// let camTransform = new THREE.Matrix4();
-// camTransform.multiplyMatrices(translationMatrix(camLastPos.x, camLastPos.y, camLastPos.z), camTransform);
-// camTransform.multiplyMatrices(rotationMatrixY(-90), camTransform);
-// let cameraPosition = new THREE.Vector3();
-// cameraPosition.setFromMatrixPosition(camTransform);
-// camera.position.lerp(cameraPosition, 0.12);
-// if (camera.position.distanceTo(cameraPosition) < 0.01) {
-// panRight = false;
-// camLastPos = cameraPosition;
-// }
-// }
+ // if (panLeft) {
+ // let camTransform = new THREE.Matrix4();
+ // camTransform.multiplyMatrices(translationMatrix(camLastPos.x, camLastPos.y, camLastPos.z), camTransform);
+ // camTransform.multiplyMatrices(rotationMatrixY(90), camTransform);
+ // let cameraPosition = new THREE.Vector3();
+ // cameraPosition.setFromMatrixPosition(camTransform);
+ // // lerp is a little janky, makes the camera move upward which I don't like
+ // // If there is a way to do a smooth movement while keeping the camera's z-position the same it would be better
+ // camera.position.lerp(cameraPosition, 0.12);
+ // if (camera.position.distanceTo(cameraPosition) < 0.01) {
+ // panLeft = false;
+ // camLastPos = cameraPosition;
+ // }
+ // } else if (panRight) {
+ // let camTransform = new THREE.Matrix4();
+ // camTransform.multiplyMatrices(translationMatrix(camLastPos.x, camLastPos.y, camLastPos.z), camTransform);
+ // camTransform.multiplyMatrices(rotationMatrixY(-90), camTransform);
+ // let cameraPosition = new THREE.Vector3();
+ // cameraPosition.setFromMatrixPosition(camTransform);
+ // camera.position.lerp(cameraPosition, 0.12);
+ // if (camera.position.distanceTo(cameraPosition) < 0.01) {
+ // panRight = false;
+ // camLastPos = cameraPosition;
+ // }
+ // }
 
 
 
