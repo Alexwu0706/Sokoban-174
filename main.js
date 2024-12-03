@@ -121,9 +121,9 @@ const playerPD_material = new THREE.MeshPhongMaterial({
  shininess: 0.5
 }); 
 const boxPA_material = new THREE.MeshPhongMaterial({
-    color: 0xf9f9f6, // Star
+    color: 0xFFA500, // Star
     shininess: 100,
-    emissive: 0xf9f9f6
+    emissive: 0xFFA500
 })
 const boxPB_material = new THREE.MeshPhongMaterial({
  color: 0xFFFFFF, // Pure white color
@@ -257,18 +257,17 @@ function initializeScene(flag){
   let box = new THREE.Group();
   let boxPA = new THREE.Mesh(boxPA_geometry,boxPA_material); //stars
   let boxPB = new THREE.Mesh(boxPB_geometry,boxPB_material); //transparent sphere
-     let boxPC = new THREE.Mesh(wall_geometry, boxPC_material); //Just for Boundary detection, invisible
-     let glowLight = new THREE.PointLight(0xf9f9f6, 0.5, 2, 1);
+  let boxPC = new THREE.Mesh(wall_geometry, boxPC_material); //Just for Boundary detection, invisible
+  let glowLight = new THREE.PointLight(0xFFA500, 0.5, 2, 1);
   boxPA.position.set(0,star_Height,0);
   boxPB.position.set(0,star_Height,0);
   boxPC.position.set(0,0,0); //Just for Boundary detection, invisible
-     boxPA.add(glowLight);
+  boxPA.add(glowLight);
   box.add(boxPA);
   box.add(boxPB);
-     box.add(boxPC);
+  box.add(boxPC);
   boxPC.visible = false; 
   let box_target = new THREE.Mesh(wall_geometry, box_material);
-
   let boxBB = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
   let box_TargetBB = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
   boxBB.setFromObject(box);
@@ -569,6 +568,7 @@ let checkOnTarget = new THREE.Vector3();
 //translate target boxes l up and check for collision with boxes
 //check if all boxes are on their targets
 function checkTargetBoxes(){
+ let glowLight = new THREE.PointLight(0xFFA500, 0.5, 2, 1);
  let boxesOnTargets = 0;
  let boxIsOnTarget = false;
  for (let i= 0; i < boxes_target.length; i++){
@@ -582,6 +582,7 @@ function checkTargetBoxes(){
   }
   if (boxIsOnTarget){
     boxesOnTargets++;
+    // boxes_target[i].add(glowLight);
   }
  }
  return boxesOnTargets
