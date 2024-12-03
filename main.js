@@ -7,7 +7,6 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-import { rotationMatrixY, translationMatrix } from './utils/transformations';
 
 let composer;
 const scene = new THREE.Scene();
@@ -406,6 +405,8 @@ let panLeft = false;
 let panRight = false;
 let resetM = false;
 let pushingHandOffset = 0.2;
+let playerRotation = 0; 
+let moveDirection = new THREE.Vector3();
 let direction = new THREE.Vector3();
 let targetPosition = new THREE.Vector3();
 let previousPosition = new THREE.Vector3();
@@ -421,120 +422,62 @@ scene.add(homePage);
 //only allow player to move if game starts
 window.addEventListener('keydown', onKeyPress); // onKeyPress is called each time a key is pressed
 setupClickDetection(camera, homePage)
+
+
+function movePlayer(moveDirection, rotation){
+  if (canMove){
+    direction.set(moveDirection.x, moveDirection.y, moveDirection.z);
+    targetPosition.set(players[0].position.x + direction.x, players[0].position.y + direction.y, players[0].position.z + direction.z);
+    previousPosition.copy(players[0].position);
+    //rotate player no matter if it moves or not
+    players[0].rotation.y = rotation;
+    //check if player moving into wall
+    if (playerCollisionWall(targetPosition)){
+      isMoving = false;
+      return;
+    }
+    //check if player moving into box 
+    //index of box to be moved returned if can be moved
+    moveBoxIndex = playerCollisionBox(targetPosition, direction);
+    if (moveBoxIndex == -2){
+      console.log('box collision')
+      isMoving = false;
+      return;
+    } else if (moveBoxIndex != -1){
+      players[0].children[5].position.set(players[0].children[5].position.x - pushingHandOffset, players[0].children[5].position.y,players[0].children[5].position.z);
+      players[0].children[4].position.set(players[0].children[4].position.x - pushingHandOffset, players[0].children[4].position.y,players[0].children[4].position.z);
+      boxPreviousPosition.copy(boxes[moveBoxIndex].position);
+    }
+    isMoving = true;
+  } 
+}
+
 function onKeyPress(event) {
   if(gameStart){
     switch (event.key) {
 
       case 'w': 
-      if (canMove){
-        direction.set(0,0,-1);
-        targetPosition.set(players[0].position.x + direction.x, players[0].position.y + direction.y, players[0].position.z + direction.z);
-        previousPosition.copy(players[0].position);
-        //rotate player no matter if it moves or not
-        players[0].rotation.y = -Math.PI / 2;
-        //check if player moving into wall
-        if (playerCollisionWall(targetPosition)){
-          isMoving = false;
-          break; 
-        }
-        //check if player moving into box 
-        //index of box to be moved returned if can be moved
-        moveBoxIndex = playerCollisionBox(targetPosition, direction);
-        if (moveBoxIndex == -2){
-          console.log('box collision')
-          isMoving = false;
-          break;
-        } else if (moveBoxIndex != -1){
-          players[0].children[5].position.set(players[0].children[5].position.x - pushingHandOffset, players[0].children[5].position.y,players[0].children[5].position.z);
-          players[0].children[4].position.set(players[0].children[4].position.x - pushingHandOffset, players[0].children[4].position.y,players[0].children[4].position.z);
-          boxPreviousPosition.copy(boxes[moveBoxIndex].position);
-        }
-        isMoving = true;
-      } 
-      break;
+        playerRotation = -Math.PI/2;
+        moveDirection = new THREE.Vector3(0,0,-1);
+        movePlayer(moveDirection, playerRotation);
+        break;
 
       case 'a': 
-      if (canMove){
-        direction.set(-1,0,0);
-        targetPosition.set(players[0].position.x + direction.x, players[0].position.y + direction.y, players[0].position.z + direction.z);
-        previousPosition.copy(players[0].position);
-        players[0].rotation.y = 0;
-        //check if player moving into wall
-        if (playerCollisionWall(targetPosition)){
-          isMoving = false;
-          break; 
-        }
-        //check if player moving into box 
-        //index of box to be moved returned if can be moved
-        moveBoxIndex = playerCollisionBox(targetPosition, direction);
-        if (moveBoxIndex == -2){
-          console.log('box collision')
-          isMoving = false;
-          break;
-        } else if (moveBoxIndex != -1){
-          players[0].children[5].position.set(players[0].children[5].position.x - pushingHandOffset, players[0].children[5].position.y,players[0].children[5].position.z);
-          players[0].children[4].position.set(players[0].children[4].position.x - pushingHandOffset, players[0].children[4].position.y,players[0].children[4].position.z);
-          console.log(boxes[moveBoxIndex].position, "currentPosition");
-          boxPreviousPosition.copy(boxes[moveBoxIndex].position);
-        }
-        isMoving = true; 
+        playerRotation = 0;
+        moveDirection = new THREE.Vector3(-1,0,0);
+        movePlayer(moveDirection, playerRotation);
         break;
-      }
       case 's': 
-      if (canMove){
-        //only direction needs to be edited
-        direction.set(0,0,1);
-        targetPosition.set(players[0].position.x + direction.x, players[0].position.y + direction.y, players[0].position.z + direction.z);
-        previousPosition.copy(players[0].position);
-        players[0].rotation.y = Math.PI / 2;
-        //check if player moving into wall
-        if (playerCollisionWall(targetPosition)){
-          isMoving = false;
-          break; 
-        }
-        //check if player moving into box 
-        //index of box to be moved returned if can be moved
-        moveBoxIndex = playerCollisionBox(targetPosition, direction);
-        if (moveBoxIndex == -2){
-          console.log('box collision')
-          isMoving = false;
-          break;
-        } else if (moveBoxIndex != -1){
-          players[0].children[5].position.set(players[0].children[5].position.x - pushingHandOffset, players[0].children[5].position.y,players[0].children[5].position.z);
-          players[0].children[4].position.set(players[0].children[4].position.x - pushingHandOffset, players[0].children[4].position.y,players[0].children[4].position.z);
-          boxPreviousPosition.copy(boxes[moveBoxIndex].position);
-        }
-        
-        isMoving = true; 
+        playerRotation = Math.PI/2;
+        moveDirection = new THREE.Vector3(0,0,1);
+        movePlayer(moveDirection, playerRotation);
         break;
-      }
 
       case 'd': 
-      if (canMove){
-        direction.set(1,0,0);
-        targetPosition.set(players[0].position.x + direction.x, players[0].position.y + direction.y, players[0].position.z + direction.z);
-        previousPosition.copy(players[0].position);
-        players[0].rotation.y = Math.PI;
-        //check if player moving into wall
-        if (playerCollisionWall(targetPosition)){
-          isMoving = false;
-          break; 
-        }
-        //check if player moving into box 
-        //index of box to be moved returned if can be moved
-        moveBoxIndex = playerCollisionBox(targetPosition, direction);
-        if (moveBoxIndex == -2){
-          console.log('box collision')
-          isMoving = false;
-          break;
-        } else if (moveBoxIndex != -1){
-          players[0].children[5].position.set(players[0].children[5].position.x - pushingHandOffset, players[0].children[5].position.y,players[0].children[5].position.z);
-          players[0].children[4].position.set(players[0].children[4].position.x - pushingHandOffset, players[0].children[4].position.y,players[0].children[4].position.z);
-          boxPreviousPosition.copy(boxes[moveBoxIndex].position);
-        }
-        isMoving = true; 
+        playerRotation = Math.PI;
+        moveDirection = new THREE.Vector3(1,0,0);
+        movePlayer(moveDirection, playerRotation);
         break;
-      }
 
       case 'q':
       panLeft = true; // Rotate camera counterclockwise
@@ -706,8 +649,12 @@ function animate() {
           }
       }
   }
+
  //camera transition
+
+
   if (panLeft) {  
+    console.log("panning left");
     //start from a set position and rotate 90 clockwise
     //update how direction is set
     //can have a hashmap of directions
