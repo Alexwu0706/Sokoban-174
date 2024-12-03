@@ -469,10 +469,10 @@ function updateDirection(degrees){
       }
     case 90:
       return {
-        "W": [new THREE.Vector3(1,0,0), -Math.PI],
-        "A": [new THREE.Vector3(0,0,-1), -Math.PI/2],
-        "S": [new THREE.Vector3(-1,0,0), 0],
-        "D": [new THREE.Vector3(0,0,1), Math.PI/2],
+        "W": [new THREE.Vector3(-1,0,0), 0],
+        "A": [new THREE.Vector3(0,0,1), Math.PI/2],
+        "S": [new THREE.Vector3(1,0,0), Math.PI],
+        "D": [new THREE.Vector3(0,0,-1), -Math.PI/2],
       }
     case 180:
       return {
@@ -483,10 +483,10 @@ function updateDirection(degrees){
       }
     case 270:
       return {
-        "W": [new THREE.Vector3(-1,0,0), 0],
-        "A": [new THREE.Vector3(0,0,1), Math.PI/2],
-        "S": [new THREE.Vector3(1,0,0), Math.PI],
-        "D": [new THREE.Vector3(0,0,-1), -Math.PI/2],
+        "W": [new THREE.Vector3(1,0,0), Math.PI],
+        "A": [new THREE.Vector3(0,0,-1), -Math.PI/2],
+        "S": [new THREE.Vector3(-1,0,0), 0],
+        "D": [new THREE.Vector3(0,0,1), Math.PI/2],
       }
     default:
       console.log("none")
@@ -593,8 +593,11 @@ let levelCleared = false;
 let flag = 1; //Map Update
 let T_player = 1.5; // Player's floating period in seconds
 let T_boxes = 1; // Boxes's floating period in seconds
-let duration = 0.5; // Duration of player movement in seconds
+const duration = 0.5; // Duration of player movement in seconds
 let animation_time_movement = 0
+const cameraRotationDuration = 0.5;
+let camera_animation_time = 0; 
+let angle = 0; 
 //to animate player movement: 
 /*
   - WASD should trigger a target position for player
@@ -712,26 +715,34 @@ function animate() {
   if (panLeft) {  
     canPan = false;
     //can have a hashmap of directions
-    const angle = Math.atan2(camera.position.x, camera.position.z);
-    const newAngle = angle - Math.PI / 2;
+    camera_animation_time += delta_animation_time;
+    let progress = Math.min(camera_animation_time / cameraRotationDuration, 1); // Clamp to [0, 1]
+    // Smooth easing
+    let oscilation = (Math.PI/4) * (1 - Math.cos(progress * Math.PI)); // From 0 to PI/2
+    let newAngle = angle + oscilation;
     // Update camera position (keeping the same radius)
     camera.position.x = cameraRadius * Math.sin(newAngle);
     camera.position.z = cameraRadius * Math.cos(newAngle);
-    panLeft = false; 
-    canPan = true; //add if statement to wait for animation to finish
+
+    if (progress >= 1) {
+      angle = newAngle;
+      panLeft = false; 
+      canPan = true; //add if statement to wait for animation to finish
+      camera_animation_time = 0;
+    }
   }
 
-  if (panRight) {
-    canPan = false;
-    //can have a hashmap of directions
-    const angle = Math.atan2(camera.position.x, camera.position.z);
-    const newAngle = angle + Math.PI / 2;
-    // Update camera position (keeping the same radius)
-    camera.position.x = cameraRadius * Math.sin(newAngle);
-    camera.position.z = cameraRadius * Math.cos(newAngle);
-    panRight = false; 
-    canPan = true; //add if statement to wait for animation to finish
-  }
+  // if (panRight) {
+  //   canPan = false;
+  //   //can have a hashmap of directions
+  //   const newAngle = angle - Math.PI / 2;
+  //   angle = newAngle
+  //   // Update camera position (keeping the same radius)
+  //   camera.position.x = cameraRadius * Math.cos(newAngle);
+  //   camera.position.z = cameraRadius * Math.sin(newAngle);
+  //   panRight = false; 
+  //   canPan = true; //add if statement to wait for animation to finish
+  // }
 
 
 
