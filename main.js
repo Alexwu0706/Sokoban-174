@@ -7,6 +7,8 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { rotationMatrixY, translationMatrix } from './utils/transformations';
+
 let composer;
 const scene = new THREE.Scene();
 
@@ -410,6 +412,8 @@ let previousPosition = new THREE.Vector3();
 let boxPreviousPosition = new THREE.Vector3();
 let previousLeftHandPosition = new THREE.Vector3();
 let previousRightHandPosition = new THREE.Vector3();
+let cameraTargetPosition = new THREE.Vector3(); 
+
 //add homePage to scene initially
 let homePage = createHomePage();
 scene.add(homePage);
@@ -575,6 +579,11 @@ function checkTargetBoxes(){
 
 }
 
+function calculateCameraTargetPosition() {
+  const quaternion = new THREE.Quaternion();
+  quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2); // Rotate 90 degrees around the Y-axis
+  cameraTargetPosition.copy(camera.position).applyQuaternion(quaternion);
+}
 
 ///animation////////////////////////////////////////////////////////////////
 let animation_time = 0;
@@ -585,7 +594,7 @@ let flag = 1; //Map Update
 let T_player = 1.5; // Player's floating period in seconds
 let T_boxes = 1; // Boxes's floating period in seconds
 let duration = 0.5; // Duration of player movement in seconds
-let animation_time_movement = 0; 
+let animation_time_movement = 0
 //to animate player movement: 
 /*
   - WASD should trigger a target position for player
@@ -698,31 +707,18 @@ function animate() {
       }
   }
  //camera transition
- // if (panLeft) {
- // let camTransform = new THREE.Matrix4();
- // camTransform.multiplyMatrices(translationMatrix(camLastPos.x, camLastPos.y, camLastPos.z), camTransform);
- // camTransform.multiplyMatrices(rotationMatrixY(90), camTransform);
- // let cameraPosition = new THREE.Vector3();
- // cameraPosition.setFromMatrixPosition(camTransform);
- // // lerp is a little janky, makes the camera move upward which I don't like
- // // If there is a way to do a smooth movement while keeping the camera's z-position the same it would be better
- // camera.position.lerp(cameraPosition, 0.12);
- // if (camera.position.distanceTo(cameraPosition) < 0.01) {
- // panLeft = false;
- // camLastPos = cameraPosition;
- // }
- // } else if (panRight) {
- // let camTransform = new THREE.Matrix4();
- // camTransform.multiplyMatrices(translationMatrix(camLastPos.x, camLastPos.y, camLastPos.z), camTransform);
- // camTransform.multiplyMatrices(rotationMatrixY(-90), camTransform);
- // let cameraPosition = new THREE.Vector3();
- // cameraPosition.setFromMatrixPosition(camTransform);
- // camera.position.lerp(cameraPosition, 0.12);
- // if (camera.position.distanceTo(cameraPosition) < 0.01) {
- // panRight = false;
- // camLastPos = cameraPosition;
- // }
- // }
+  if (panLeft) {  
+    //start from a set position and rotate 90 clockwise
+    //update how direction is set
+    //can have a hashmap of directions
+    const angle = Math.atan2(camera.position.x, camera.position.z);
+    // Add 90 degrees in radians (clockwise rotation)
+    const newAngle = angle - Math.PI / 2;
+    // Update camera position (keeping the same radius)
+    camera.position.x = 5 * Math.sin(newAngle);
+    camera.position.z = 5 * Math.cos(newAngle);
+    panLeft = false; 
+  }
 
 
 
