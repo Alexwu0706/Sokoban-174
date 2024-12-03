@@ -33,15 +33,33 @@ composer.addPass(outputPass);
 
 
 document.body.appendChild( renderer.domElement );
-const startGameCameraPosition = new THREE.Vector3(0, 10, 5);
+const startGameCameraPosition = new THREE.Vector3(0, 10, 10);
 const homeScreenCameraPosition = new THREE.Vector3(0, 12, 10);
 const controls = new OrbitControls(camera, renderer.domElement);
-camera.position.set(0,10,10); //after demo(5, 10, 5)
-let camLastPos = new THREE.Vector3(5, 10, 5); // For keeping track of rotation. Not the most elegant
+camera.position.set(0,10,10); 
+let camLastPos = new THREE.Vector3(0, 10, 10); // For keeping track of rotation. Not the most elegant
 controls.target.set(0, 0, 0);
 
 let playerPosition = new THREE.Vector3(0, 0, 0);
 let playerRotationY = 0;
+
+function translationMatrix(tx, ty, tz) {
+	return new THREE.Matrix4().set(
+		1, 0, 0, tx,
+		0, 1, 0, ty,
+		0, 0, 1, tz,
+		0, 0, 0, 1
+	);
+}
+
+function rotationMatrixY(theta) {
+    return new THREE.Matrix4().set(
+        Math.cos(theta), 0, Math.sin(theta), 0,
+        0, 1, 0, 0,
+        -Math.sin(theta), 0, Math.cos(theta), 0,
+        0, 0, 0, 1
+    );
+}
 
 // Project
 // Setting up the lights
@@ -417,6 +435,110 @@ scene.add(homePage);
 //only allow player to move if game starts
 window.addEventListener('keydown', onKeyPress); // onKeyPress is called each time a key is pressed
 setupClickDetection(camera, homePage)
+
+function forward(){
+  if (canMove){
+    targetPosition.set(players[0].position.x, players[0].position.y, players[0].position.z - 1);
+    previousPosition.copy(players[0].position);
+    //rotate player no matter if it moves or not
+    players[0].rotation.y = -Math.PI / 2;
+    direction.set(0,0,-1);
+    //check if player moving into wall
+    if (playerCollisionWall(targetPosition)){
+      isMoving = false;
+    }
+    //check if player moving into box 
+    //index of box to be moved returned if can be moved
+    moveBoxIndex = playerCollisionBox(targetPosition, direction);
+    if (moveBoxIndex == -2){
+      console.log('box collision')
+      isMoving = false;
+    } else if (moveBoxIndex != -1){
+      players[0].children[5].position.set(players[0].children[5].position.x - pushingHandOffset, players[0].children[5].position.y,players[0].children[5].position.z);
+      players[0].children[4].position.set(players[0].children[4].position.x - pushingHandOffset, players[0].children[4].position.y,players[0].children[4].position.z);
+      boxPreviousPosition.copy(boxes[moveBoxIndex].position);
+    }
+    isMoving = true;
+  } 
+}
+
+function backward(){
+  if (canMove){
+    console.log(boxes_target)
+    targetPosition.set(players[0].position.x, players[0].position.y, players[0].position.z + 1);
+    previousPosition.copy(players[0].position);
+    players[0].rotation.y = Math.PI / 2;
+    direction.set(0,0,1);
+    //check if player moving into wall
+    if (playerCollisionWall(targetPosition)){
+      isMoving = false;
+    }
+    //check if player moving into box 
+    //index of box to be moved returned if can be moved
+    moveBoxIndex = playerCollisionBox(targetPosition, direction);
+    if (moveBoxIndex == -2){
+      console.log('box collision')
+      isMoving = false;
+    } else if (moveBoxIndex != -1){
+      players[0].children[5].position.set(players[0].children[5].position.x - pushingHandOffset, players[0].children[5].position.y,players[0].children[5].position.z);
+      players[0].children[4].position.set(players[0].children[4].position.x - pushingHandOffset, players[0].children[4].position.y,players[0].children[4].position.z);
+      boxPreviousPosition.copy(boxes[moveBoxIndex].position);
+    }
+    isMoving = true; 
+  }
+}
+
+function left(){
+  if (canMove){
+    targetPosition.set(players[0].position.x - 1, players[0].position.y, players[0].position.z);
+    previousPosition.copy(players[0].position);
+    players[0].rotation.y = 0;
+    direction.set(-1,0,0);
+    //check if player moving into wall
+    if (playerCollisionWall(targetPosition)){
+      isMoving = false;
+    }
+    //check if player moving into box 
+    //index of box to be moved returned if can be moved
+    moveBoxIndex = playerCollisionBox(targetPosition, direction);
+    if (moveBoxIndex == -2){
+      console.log('box collision')
+      isMoving = false;
+    } else if (moveBoxIndex != -1){
+      players[0].children[5].position.set(players[0].children[5].position.x - pushingHandOffset, players[0].children[5].position.y,players[0].children[5].position.z);
+      players[0].children[4].position.set(players[0].children[4].position.x - pushingHandOffset, players[0].children[4].position.y,players[0].children[4].position.z);
+      console.log(boxes[moveBoxIndex].position, "currentPosition");
+      boxPreviousPosition.copy(boxes[moveBoxIndex].position);
+    }
+    isMoving = true; 
+  }
+}
+
+function right(){
+  if (canMove){
+    targetPosition.set(players[0].position.x + 1, players[0].position.y, players[0].position.z);
+    previousPosition.copy(players[0].position);
+    players[0].rotation.y = Math.PI;
+    direction.set(1,0,0);
+    //check if player moving into wall
+    if (playerCollisionWall(targetPosition)){
+      isMoving = false;
+    }
+    //check if player moving into box 
+    //index of box to be moved returned if can be moved
+    moveBoxIndex = playerCollisionBox(targetPosition, direction);
+    if (moveBoxIndex == -2){
+      console.log('box collision')
+      isMoving = false;
+    } else if (moveBoxIndex != -1){
+      players[0].children[5].position.set(players[0].children[5].position.x - pushingHandOffset, players[0].children[5].position.y,players[0].children[5].position.z);
+      players[0].children[4].position.set(players[0].children[4].position.x - pushingHandOffset, players[0].children[4].position.y,players[0].children[4].position.z);
+      boxPreviousPosition.copy(boxes[moveBoxIndex].position);
+    }
+    isMoving = true; 
+  }
+}
+
 // w = forward ; s = backward; a = left ; d = right
 //cam=0,10,10  forward = w backward = s left = a right = d
 //cam=10,10,0  forward = a backward = d left = s right = w
@@ -425,117 +547,21 @@ setupClickDetection(camera, homePage)
 function onKeyPress(event) {
   if(gameStart){
     switch (event.key) {
-
       case 'w': 
-      if (canMove){
-        targetPosition.set(players[0].position.x, players[0].position.y, players[0].position.z - 1);
-        previousPosition.copy(players[0].position);
-        //rotate player no matter if it moves or not
-        players[0].rotation.y = -Math.PI / 2;
-        direction.set(0,0,-1);
-        //check if player moving into wall
-        if (playerCollisionWall(targetPosition)){
-          isMoving = false;
-          break; 
-        }
-        //check if player moving into box 
-        //index of box to be moved returned if can be moved
-        moveBoxIndex = playerCollisionBox(targetPosition, direction);
-        if (moveBoxIndex == -2){
-          console.log('box collision')
-          isMoving = false;
-          break;
-        } else if (moveBoxIndex != -1){
-          players[0].children[5].position.set(players[0].children[5].position.x - pushingHandOffset, players[0].children[5].position.y,players[0].children[5].position.z);
-          players[0].children[4].position.set(players[0].children[4].position.x - pushingHandOffset, players[0].children[4].position.y,players[0].children[4].position.z);
-          boxPreviousPosition.copy(boxes[moveBoxIndex].position);
-        }
-        isMoving = true;
-      } 
-      break;
+        forward();
+        break;
 
       case 'a': 
-      if (canMove){
-        targetPosition.set(players[0].position.x - 1, players[0].position.y, players[0].position.z);
-        previousPosition.copy(players[0].position);
-        players[0].rotation.y = 0;
-        direction.set(-1,0,0);
-        //check if player moving into wall
-        if (playerCollisionWall(targetPosition)){
-          isMoving = false;
-          break; 
-        }
-        //check if player moving into box 
-        //index of box to be moved returned if can be moved
-        moveBoxIndex = playerCollisionBox(targetPosition, direction);
-        if (moveBoxIndex == -2){
-          console.log('box collision')
-          isMoving = false;
-          break;
-        } else if (moveBoxIndex != -1){
-          players[0].children[5].position.set(players[0].children[5].position.x - pushingHandOffset, players[0].children[5].position.y,players[0].children[5].position.z);
-          players[0].children[4].position.set(players[0].children[4].position.x - pushingHandOffset, players[0].children[4].position.y,players[0].children[4].position.z);
-          console.log(boxes[moveBoxIndex].position, "currentPosition");
-          boxPreviousPosition.copy(boxes[moveBoxIndex].position);
-        }
-        isMoving = true; 
+        left();
         break;
-      }
+
       case 's': 
-      if (canMove){
-        console.log(boxes_target)
-        targetPosition.set(players[0].position.x, players[0].position.y, players[0].position.z + 1);
-        previousPosition.copy(players[0].position);
-        players[0].rotation.y = Math.PI / 2;
-        direction.set(0,0,1);
-        //check if player moving into wall
-        if (playerCollisionWall(targetPosition)){
-          isMoving = false;
-          break; 
-        }
-        //check if player moving into box 
-        //index of box to be moved returned if can be moved
-        moveBoxIndex = playerCollisionBox(targetPosition, direction);
-        if (moveBoxIndex == -2){
-          console.log('box collision')
-          isMoving = false;
-          break;
-        } else if (moveBoxIndex != -1){
-          players[0].children[5].position.set(players[0].children[5].position.x - pushingHandOffset, players[0].children[5].position.y,players[0].children[5].position.z);
-          players[0].children[4].position.set(players[0].children[4].position.x - pushingHandOffset, players[0].children[4].position.y,players[0].children[4].position.z);
-          boxPreviousPosition.copy(boxes[moveBoxIndex].position);
-        }
-        
-        isMoving = true; 
+        backward();
         break;
-      }
 
       case 'd': 
-      if (canMove){
-        targetPosition.set(players[0].position.x + 1, players[0].position.y, players[0].position.z);
-        previousPosition.copy(players[0].position);
-        players[0].rotation.y = Math.PI;
-        direction.set(1,0,0);
-        //check if player moving into wall
-        if (playerCollisionWall(targetPosition)){
-          isMoving = false;
-          break; 
-        }
-        //check if player moving into box 
-        //index of box to be moved returned if can be moved
-        moveBoxIndex = playerCollisionBox(targetPosition, direction);
-        if (moveBoxIndex == -2){
-          console.log('box collision')
-          isMoving = false;
-          break;
-        } else if (moveBoxIndex != -1){
-          players[0].children[5].position.set(players[0].children[5].position.x - pushingHandOffset, players[0].children[5].position.y,players[0].children[5].position.z);
-          players[0].children[4].position.set(players[0].children[4].position.x - pushingHandOffset, players[0].children[4].position.y,players[0].children[4].position.z);
-          boxPreviousPosition.copy(boxes[moveBoxIndex].position);
-        }
-        isMoving = true; 
+        right();
         break;
-      }
 
       case 'q':
       panLeft = true; // Rotate camera counterclockwise
@@ -703,31 +729,29 @@ function animate() {
       }
   }
  //camera transition
- // if (panLeft) {
- // let camTransform = new THREE.Matrix4();
- // camTransform.multiplyMatrices(translationMatrix(camLastPos.x, camLastPos.y, camLastPos.z), camTransform);
- // camTransform.multiplyMatrices(rotationMatrixY(90), camTransform);
- // let cameraPosition = new THREE.Vector3();
- // cameraPosition.setFromMatrixPosition(camTransform);
- // // lerp is a little janky, makes the camera move upward which I don't like
- // // If there is a way to do a smooth movement while keeping the camera's z-position the same it would be better
- // camera.position.lerp(cameraPosition, 0.12);
- // if (camera.position.distanceTo(cameraPosition) < 0.01) {
- // panLeft = false;
- // camLastPos = cameraPosition;
- // }
- // } else if (panRight) {
- // let camTransform = new THREE.Matrix4();
- // camTransform.multiplyMatrices(translationMatrix(camLastPos.x, camLastPos.y, camLastPos.z), camTransform);
- // camTransform.multiplyMatrices(rotationMatrixY(-90), camTransform);
- // let cameraPosition = new THREE.Vector3();
- // cameraPosition.setFromMatrixPosition(camTransform);
- // camera.position.lerp(cameraPosition, 0.12);
- // if (camera.position.distanceTo(cameraPosition) < 0.01) {
- // panRight = false;
- // camLastPos = cameraPosition;
- // }
- // }
+  if (panLeft) {
+    let camTransform = new THREE.Matrix4();
+    camTransform.multiplyMatrices(translationMatrix(camLastPos.x, camLastPos.y, camLastPos.z), camTransform);
+    camTransform.multiplyMatrices(rotationMatrixY(Math.PI/2), camTransform);
+    let cameraPosition = new THREE.Vector3();
+    cameraPosition.setFromMatrixPosition(camTransform);
+    camera.position.lerp(cameraPosition, 0.12);
+    if (camera.position.distanceTo(cameraPosition) < 0.01) {
+      panLeft = false;
+      camLastPos = cameraPosition;
+    }
+  } else if (panRight) {
+    let camTransform = new THREE.Matrix4();
+    camTransform.multiplyMatrices(translationMatrix(camLastPos.x, camLastPos.y, camLastPos.z), camTransform);
+    camTransform.multiplyMatrices(rotationMatrixY(-Math.PI/2), camTransform);
+    let cameraPosition = new THREE.Vector3();
+    cameraPosition.setFromMatrixPosition(camTransform);
+    camera.position.lerp(cameraPosition, 0.12);
+    if (camera.position.distanceTo(cameraPosition) < 0.01) {
+      panRight = false;
+      camLastPos = cameraPosition;
+    }
+  }
 
 
 
