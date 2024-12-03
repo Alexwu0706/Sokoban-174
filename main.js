@@ -494,6 +494,8 @@ function updateDirection(degrees){
   }
 }
 
+
+
 window.addEventListener('keydown', onKeyPress); // onKeyPress is called each time a key is pressed
 function onKeyPress(event) {
   if(gameStart){
@@ -607,9 +609,6 @@ let angle = 0;
 
 
 */
-
-
-
 function animate() {
  controls.update();
 
