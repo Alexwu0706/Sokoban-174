@@ -222,10 +222,12 @@ function initializeScene(flag){
  playerPC.position.set(hat_Width, playerPC_Height, 0); //Hat
  playerPC.rotation.set(0, 0, -hat_Angle);
  playerPD.position.set(0,0,0) //Just for Boundary detection, invisible
+ let glowLight = new THREE.PointLight(0xFFA500, 0.5, 2, 1);
  player.add(playerPA);
  player.add(playerPB);
  player.add(playerPC);
  player.add(playerPD);
+ player.add(glowLight);
  player.add(playerRightHand);
  player.add(playerLeftHand);
  playerPD.visible = false;
@@ -579,7 +581,7 @@ function checkTargetBoxes(){
   }
   if (boxIsOnTarget){
     boxesOnTargets++;
-    // boxes_target[i].add(glowLight);
+    
   }
  }
  return boxesOnTargets
