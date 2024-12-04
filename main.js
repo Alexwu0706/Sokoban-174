@@ -92,11 +92,13 @@ let boxPA_geometry = new THREE.ExtrudeGeometry(starShape, {
 });
 let wall_geometry = new THREE.BoxGeometry( 1, 1, 1 ); 
 let boxPB_geometry = new THREE.SphereGeometry(1 / 2.5);
+let particle_geometry = new THREE.BufferGeometry();
 
-//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-// Shaders
-
-///Initialization////////////////////////////////////////////////////////////////
+///Initialization///
+const particle_material = new THREE.PointsMaterial({
+  color: 0xffffff, // White color
+  size: 0.1, // Particle size
+});
 const wall_material = new THREE.MeshPhongMaterial({
  color: 0x808080, //Gray color
  shininess: 100, 
@@ -177,12 +179,6 @@ let hat_Width = 0.2;
 let hat_Angle = Math.PI*25/180; 
 let star_Height = 0.3;
 let playerHands_Height = 0.1; // both hands are synced
-const pushingHand_Height = 0.3;  
-const pushingHand_Rotation = 1.5; //radians
-//(hat_Angle , 0, 0); (0, playerPC_Height, hat_Width) forward
-//(-hat_Angle , 0, 0); (0, playerPC_Height, -hat_Width) backward 
-//(0 , 0, hat_Angle); (-hat_Width, playerPC_Height, 0) Right
-//(0 , 0, -hat_Angle); (hat_Width, playerPC_Height, 0) Left
 
 function initializeScene(flag){
  flag = flag % 3; 
@@ -205,6 +201,7 @@ function initializeScene(flag){
  console.log(Wx, "This is the data fetched for walls X");
 
  //add players to the scene
+ let particle = new THREE.Points(particle_geometry, particle_material);
  playerPosition.set(0,0,0); //Initial position of player
  playerRotationY = 0; //Initial rotation of player
  for (let i = 0; i < 1; i++) {
@@ -646,11 +643,10 @@ function animate() {
  //Box Self-Motion
  let floating_boxes = 0.2*Math.sin(animation_time*2*Math.PI/T_boxes+Math.PI/2);
  for(let i = 0; i < Bx.length; i++){
- boxes[i].children[0].position.y = floating_boxes + star_Height;
- //boxes[i].children[1].position.y = floating_boxes + star_Height;
- boxes[i].children[0].rotation.x = animation_time;
- boxes[i].children[0].rotation.y = animation_time;
- //boxes[i].children[0].rotation.z = animation_time;
+  boxes[i].children[0].rotation.x = animation_time;
+  boxes[i].children[0].rotation.y = animation_time;
+  boxes[i].children[0].position.y = floating_boxes + star_Height;
+  boxes[i].children[1].position.y = floating_boxes + star_Height;
  }
  //player movement along with box movement
  //need to reset isMoving, direction, moveBoxIndex after player has moved
