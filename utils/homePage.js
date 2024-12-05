@@ -313,13 +313,13 @@ function populateInstructions() {
         const instructionsText = new TextGeometry('Instructions :\nW,A,S,D to move \nR to reset level \nQ or E to change camera angle\nMove all stars to targets\ngood luck !', {
             font: font,
             size: 0.3,
-            depth: 0.1,
+            depth: 0.05,
             curveSegments: 12,
             bevelEnabled: true,
-            bevelThickness: 0.03,
+            bevelThickness: 0.02,
             bevelSize: 0.02,
         });
-        const textMaterial = new THREE.MeshBasicMaterial({ color: 0xBF40BF });
+        const textMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
         const textMesh = new THREE.Mesh(instructionsText, textMaterial);
         textMesh.position.set(0, 2, 0.01);
         //positioning text
@@ -353,5 +353,4 @@ function goBackToMenu(){
     billboardMesh.scale.set(1,1,1);
     homePage.clear();
     homePage = createHomePage();
-    //for some reason title did not reappear
 }

@@ -448,7 +448,7 @@ function movePlayer(moveDirection, rotation){
       return;
     } else if (moveBoxIndex != -1){
       players[0].children[5].position.set(players[0].children[5].position.x - pushingHandOffset, players[0].children[5].position.y,players[0].children[5].position.z);
-      players[0].children[4].position.set(players[0].children[4].position.x - pushingHandOffset, players[0].children[4].position.y,players[0].children[4].position.z);
+      players[0].children[6].position.set(players[0].children[6].position.x - pushingHandOffset, players[0].children[6].position.y,players[0].children[6].position.z);
       boxPreviousPosition.copy(boxes[moveBoxIndex].position);
     }
     isMoving = true;
@@ -639,8 +639,8 @@ function animate() {
  players[0].children[0].position.y = floating_player + playerPA_Height; 
  players[0].children[1].position.y = floating_player + playerPB_Height; 
  players[0].children[2].position.y = floating_player + playerPC_Height; 
- players[0].children[4].position.y = floating_player + playerHands_Height;
  players[0].children[5].position.y = floating_player + playerHands_Height;
+ players[0].children[6].position.y = floating_player + playerHands_Height;
 
  //Box Self-Motion
  let floating_boxes = 0.2*Math.sin(animation_time*2*Math.PI/T_boxes+Math.PI/2);
@@ -660,7 +660,6 @@ function animate() {
       // Smooth easing
       let oscilation = 0.5 * (1 - Math.cos(progress * Math.PI)); // From 0 to 1
       let armOscilation = Math.sin(progress * Math.PI) * (Math.PI / 2);
-      let armDistance = Math.sin(progress * Math.PI) * 0.2;
 
 
 
@@ -676,7 +675,7 @@ function animate() {
         //left arm
         players[0].children[5].rotation.z = -armOscilation;
         //right arm
-        players[0].children[4].rotation.z = -armOscilation;
+        players[0].children[6].rotation.z = -armOscilation;
       }
 
       players[0].position.set(
@@ -690,7 +689,7 @@ function animate() {
           if (moveBoxIndex != -1){
             //move arms back to original 
             players[0].children[5].position.x += pushingHandOffset;
-            players[0].children[4].position.x += pushingHandOffset;
+            players[0].children[6].position.x += pushingHandOffset;
             boxesBB[moveBoxIndex].setFromObject(boxes[moveBoxIndex]);
           }
           playersBB[0].setFromObject(players[0]);
