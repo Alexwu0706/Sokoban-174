@@ -21,7 +21,7 @@ const renderScene = new RenderPass(scene, camera);
 
 const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
 bloomPass.threshold = 0;
-bloomPass.strength = 0.2;
+bloomPass.strength = 0;
 bloomPass.radius = 1;
 
 const outputPass = new OutputPass();
@@ -63,7 +63,7 @@ function rotationMatrixY(theta) {
     );
 }
 
-const ambientLight = new THREE.AmbientLight(0xd2d8f2, 0.02);
+const ambientLight = new THREE.AmbientLight(0xd2d8f2, 0.015);
 scene.add(ambientLight);
 
 //game states
@@ -153,7 +153,7 @@ const boxPC_material = new THREE.MeshPhongMaterial({
 const goal_texture = new THREE.TextureLoader().load('assets/finalproj_goal_tile.png');
 goal_texture.colorSpace = THREE.SRGBColorSpace;
 const box_material = new THREE.MeshStandardMaterial({
- map: goal_texture
+    map: goal_texture
 });
 const ground_texture = new THREE.TextureLoader().load('assets/finalproj_floor_tile.png');
 ground_texture.colorSpace = THREE.SRGBColorSpace;
@@ -283,7 +283,10 @@ function initializeScene(flag){
   box.add(boxPB);
      box.add(boxPC);
   boxPC.visible = false; 
-  let box_target = new THREE.Mesh(wall_geometry, box_material);
+     let box_target = new THREE.Mesh(wall_geometry, box_material);
+     let winGlow = new THREE.PointLight(0x76a6d6, 0.5, 2, 1);
+     box_target.add(winGlow);
+     winGlow.position.set(0, -1, 0);
 
   let boxBB = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
   let box_TargetBB = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
@@ -300,7 +303,7 @@ function initializeScene(flag){
  }
  //add ground tiles to scene
  for (let i=0; i< Gx.length; i++){
-  let ground = new THREE.Mesh(wall_geometry, ground_material);
+     let ground = new THREE.Mesh(wall_geometry, ground_material);
   grounds.push(ground);
   scene.add(ground);
  }
@@ -806,7 +809,8 @@ document.addEventListener('buttonClick', (event) => {
 
 function startGame(){
   gameStart = true; 
-  scene.remove(homePage);
+    scene.remove(homePage);
+    bloomPass.strength = 0.25;
   camera.position.copy(startGameCameraPosition)
 }
 
