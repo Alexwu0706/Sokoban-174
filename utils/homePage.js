@@ -95,6 +95,12 @@ const buttonUniforms = {
     opacity: { value: 0.8 } 
 }
 
+const titleBoxUniforms ={
+    color: { value: new THREE.Color(0x301934) }, // White color
+    borderRadius: { value: 0.1 }, 
+    opacity: { value: 0 } 
+}
+
 let homePage = new THREE.Group();
 
 const billboardGeometry = new THREE.PlaneGeometry(6, 6);
@@ -125,7 +131,12 @@ const buttonMaterial = new THREE.ShaderMaterial({
     transparent: true
 });
 
-let titleMesh;
+const titleBoxMaterial = new THREE.ShaderMaterial({
+    uniforms: titleBoxUniforms,
+    vertexShader: buttonShader.vertexShader(),
+    fragmentShader: buttonShader.fragmentShader(),
+    transparent: true
+});
 
 
 
@@ -133,32 +144,13 @@ let titleMesh;
 export function createHomePage(){
 
     const loader = new FontLoader();
-    loader.load('./assets/font.typeface.json', (font) => {
-        // Create Text
-        const textGeometry = new TextGeometry(TITLE, {
-            font: font,
-            size: 0.5,    // Font size
-            depth: 0.2,  // Depth of the text
-            curveSegments: 12, // Curve quality
-            bevelEnabled: true, // Optional beveling
-            bevelThickness: 0.03,
-            bevelSize: 0.02,
-        });
-        const textMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
-        titleMesh = new THREE.Mesh(textGeometry, textMaterial);
-        titleMesh.position.set(0, 2, 0.01);
-        centerText(titleMesh, billboardMesh);
-        titleMesh.position.y += 2;
-        titleMesh.name = 'title';
-        homePage.add(titleMesh);
-        console.log('added title');
-    });
-
+    let title = createTitle(TITLE, eventTrigger())
     //create buttons
     let playButton = createButton('Play', eventTrigger() );
     let instructionsButton = createButton('Instructions', eventTrigger());
-   
-    instructionsButton.position.y -= 2; 
+    title.position.y += 2;
+    instructionsButton.position.y -= 2;
+    homePage.add(title); 
     homePage.add(playButton);
     homePage.add(instructionsButton);
     homePage.add(billboardMesh);
@@ -203,6 +195,40 @@ function createButton(text, onClick){
 
 }
 
+//create title with transparent box
+function createTitle(text){
+    const title = new THREE.Group();
+    const loader = new FontLoader();
+    loader.load('./assets/font.typeface.json', (font) => {
+        // Create Text
+        const textGeometry = new TextGeometry(text, {
+            font: font,
+            size: 0.5,    // Font size
+            depth: 0.1,  // Depth of the text
+            curveSegments: 12, // Curve quality
+            bevelEnabled: true, // Optional beveling
+            bevelThickness: 0.03,
+            bevelSize: 0.02,
+        });
+        const textMaterial = new THREE.MeshBasicMaterial({ color: 0x0000000 });
+        const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+        textMesh.position.set(0,0,0.01)
+        textMesh.name = text + "Button";
+        
+        //create button background to be wider than text
+        const textBox = new THREE.Box3().setFromObject(textMesh);
+        const titleBG = new THREE.PlaneGeometry(textBox.max.x - textBox.min.x + 0.5, textBox.max.y - textBox.min.y + 0.5);
+        const titleMesh = new THREE.Mesh(titleBG, titleBoxMaterial);
+        titleMesh.name = text + "BG"
+        //center text on button
+        centerText(textMesh, titleMesh);
+        title.add(titleMesh);
+        title.add(textMesh);
+
+    });
+    return title;
+
+}
 
 
 //always center the text on billBoard
@@ -353,4 +379,5 @@ function goBackToMenu(){
     billboardMesh.scale.set(1,1,1);
     homePage.clear();
     homePage = createHomePage();
+    
 }
