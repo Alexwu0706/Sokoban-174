@@ -304,29 +304,34 @@ function eventTrigger(text){
 
 //fade homePage out and fade homePage in
 function expandHomePage() {
-    const duration = 1; // Duration of the animation in seconds
+    homePage.clear(); // Clear all children after scaling
+    populateInstructions(); // Add new content
+    //         populateInstructions(); // Add new content
+    //         populateInstructions(); // Add new content
+    // const duration = 1; // Duration of the animation in seconds
+    // let currentPosition = new THREE.Vector3();
 
-    const initialPosition = homePage.position.clone(); // Save current scale
-    const targetPosition = new THREE.Vector3(initialPosition.x, initialPosition.y + 8, initialPosition.z); // Desired expanded scale
+    // const initialPosition = homePage.position.clone(); // Save current scale
+    // const targetPosition = new THREE.Vector3(initialPosition.x, initialPosition.y + 8.0, initialPosition.z); // Desired expanded scale
 
 
-    const clock = new THREE.Clock();
-    function animate() {
-        const elapsed = clock.getElapsedTime();
-        const t = Math.min(elapsed / duration, 1); // Normalize time to [0, 1]
+    // const clock = new THREE.Clock();
+    // function animate() {
+    //     const elapsed = clock.getElapsedTime();
+    //     const t = Math.min(elapsed / duration, 1); // Normalize time to [0, 1]
+        
+    //     currentPosition.set(targetPosition.x, targetPosition.y * t, targetPosition.z);
+    //     homePage.position.set(currentPosition.x, currentPosition.y, currentPosition.z); // Set new scale
+    //     if (t >= 1) {
+    //         homePage.clear(); // Clear all children after scaling
+    //         populateInstructions(); // Add new content
+    //     } else {
+    //         requestAnimationFrame(animate);
+    //     }
+    // }
 
-        homePage.position.lerpVectors(initialPosition, targetPosition, t);
-
-        if (t < 1) {
-            requestAnimationFrame(animate); // Continue animation
-        } else {
-            homePage.clear(); // Clear all children after scaling
-            populateInstructions(); // Add new content
-        }
-    }
-
-    clock.start();
-    animate();
+    // clock.start();
+    // animate();
 }
 
 
