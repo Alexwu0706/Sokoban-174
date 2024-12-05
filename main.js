@@ -145,6 +145,33 @@ const sky_texture = new THREE.CubeTextureLoader().load(['assets/finalproj_skybox
 sky_texture.colorSpace = THREE.SRGBColorSpace;
 scene.background = sky_texture;
 
+// particle group
+function createParticleGroup(particleCount, color, size, particleX, particleY, particleZ) {
+  // Create a Float32Array for positions
+  const positions = new Float32Array(particleCount * 3);
+
+  // Set positions for each particle
+  for (let i = 0; i < particleCount; i++) {
+    positions[i * 3] = (Math.random() - 0.5)+particleX; // x with offset
+    positions[i * 3 + 1] = (Math.random() - 0.5)+particleY + 3; // y with offset
+    positions[i * 3 + 2] = (Math.random() - 0.5)+particleZ; // z with offset
+    // positions[i * 3] = (Math.random() - 0.5) * 10 + particleX; // x with offset
+    // positions[i * 3 + 1] = (Math.random() - 0.5) * 10 + particleY; // y with offset
+    // positions[i * 3 + 2] = (Math.random() - 0.5) * 10 + particleZ; // z with offset
+  }
+
+  // Create a BufferGeometry and set positions
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+  // Create a PointsMaterial
+  const material = new THREE.PointsMaterial({ color, size });
+
+  // Create a Points object
+  const particles = new THREE.Points(geometry, material);
+
+  return particles;
+}
 
 //storing map info 
 let players = []; // array of players
@@ -164,6 +191,7 @@ let boxesBB = []; //bounding box of boxes
 let boxes_target = []; //boxes target
 let grounds = [];
 let boxes_TargetBB = []; //bounding box of boxes target if all target boxes have a box in contact, then a win is triggered
+let particleGroups = [];
 
 //determining which map to display
 let playerPA_Height = 0.5;
@@ -173,24 +201,7 @@ let hat_Width = 0.2;
 let hat_Angle = Math.PI*25/180; 
 let star_Height = 0.3;
 let playerHands_Height = 0.1; // both hands are synced
-
-
-//particles 
-// let particleCount = 100;
-// let particle_positions = new Float32Array(particleCount * 3);
-
-// for (let i = 0; i < particleCount; i++) {
-//   particle_positions[i * 3] = Math.random() * 10 - 5; // Random x
-//   particle_positions[i * 3 + 1] = Math.random() * 10 - 5; // Random y
-//   particle_positions[i * 3 + 2] = Math.random() * 10 - 5; // Random z
-// }
-// const particleGeometry = new THREE.BufferGeometry();
-// particleGeometry.setAttribute('position', new THREE.BufferAttribute(particle_positions, 3));
-
-// const particleMaterial = new THREE.PointsMaterial({ color: 0xFFA500, size: 0.5 });
-// const particles = new THREE.Points(particleGeometry, particleMaterial);
-
-// scene.add(particles);
+const clock = new THREE.Clock();
 
 function initializeScene(flag){
  flag = flag % 3; 
@@ -321,6 +332,11 @@ function initializeScene(flag){
  for (let i=0; i< Gx.length; i++){
   grounds[i].scale.set(1,1/50,1);
   grounds[i].position.set(Gx[i],-l,Gz[i]);
+ }
+
+ for (let i=0; i < Bx.length; i++){
+  let particleGroup = createParticleGroup(100,0xFFA500,0.5,boxes_target[i].position.x,boxes_target[i].position.y,boxes_target[i].position.z);
+  particleGroups.push(particleGroup);
  }
 
  //add grid to scene
@@ -572,9 +588,7 @@ function onKeyPress(event) {
   }
 }
 
-
-
-let checkOnTarget = new THREE.Vector3(); 
+let checkOnTarget = new THREE.Vector3();
 //translate target boxes l up and check for collision with boxes
 //check if all boxes are on their targets
 function checkTargetBoxes(){
@@ -583,20 +597,6 @@ function checkTargetBoxes(){
  for (let i= 0; i < boxes_target.length; i++){
   boxIsOnTarget = false;
   checkOnTarget.set(boxes_target[i].position.x, boxes_target[i].position.y + l, boxes_target[i].position.z);
-  //particles 
-  // let particleCount = 100;
-  // let particle_positions = new Float32Array(particleCount * 3);
-
-  // for (let i = 0; i < particleCount; i++) {
-  //   particle_positions[i * 3] = Math.random() * 10 - 5; // location of boxes_target[i].x
-  //   particle_positions[i * 3 + 1] = Math.random() * 10 - 5; // location of boxes_target[i].y
-  //   particle_positions[i * 3 + 2] = Math.random() * 10 - 5; // location of boxes_target[i].z
-  // }
-  // const particleGeometry = new THREE.BufferGeometry();
-  // particleGeometry.setAttribute('position', new THREE.BufferAttribute(particle_positions, 3));
-
-  // const particleMaterial = new THREE.PointsMaterial({ color: 0xFFA500, size: 0.5 });
-  // const particles = new THREE.Points(particleGeometry, particleMaterial);
   for (let j = 0; j < boxesBB.length; j++){
   //if there is a collision with any box update count
     if (movingCollisionCheck(checkOnTarget, boxesBB[j])){
@@ -605,7 +605,6 @@ function checkTargetBoxes(){
   }
   if (boxIsOnTarget){
     boxesOnTargets++;
-    
   }
  }
  return boxesOnTargets
@@ -615,7 +614,7 @@ function checkTargetBoxes(){
 ///animation////////////////////////////////////////////////////////////////
 let animation_time = 0;
 let delta_animation_time;
-const clock = new THREE.Clock();
+
 let levelCleared = false;
 let flag = 1; //Map Update
 let T_player = 1.5; // Player's floating period in seconds
@@ -676,6 +675,7 @@ function animate() {
  }
  //player movement along with box movement
  //need to reset isMoving, direction, moveBoxIndex after player has moved
+ 
   if (isMoving) {
       canMove = false; 
       animation_time_movement += delta_animation_time;
@@ -684,8 +684,6 @@ function animate() {
       // Smooth easing
       let oscilation = 0.5 * (1 - Math.cos(progress * Math.PI)); // From 0 to 1
       let armOscilation = Math.sin(progress * Math.PI) * (Math.PI / 2);
-
-
 
       // Update the player's position
       if (moveBoxIndex != -1){
@@ -707,6 +705,7 @@ function animate() {
           previousPosition.y + oscilation * direction.y, 
           previousPosition.z + oscilation * direction.z
       );
+      
       // Stop the animation when it reaches the end
       if (progress >= 1) {
           //update box bounding boxes
@@ -724,18 +723,28 @@ function animate() {
           animation_time_movement = 0; // Reset for future animations
           previousPosition.copy(players[0].position); // Update the start position
           //check for win condition
-          if (checkTargetBoxes() == boxes_target.length){
-            //particles end animation
-            //for a given time ; add particles to the scene above the tiles
-            resetM = true;
-            levelCleared = true;
+          if (checkTargetBoxes() == boxes_target.length) {
+            for (let i = 0; i < Bx.length; i++) {
+              scene.add(particleGroups[i]);
+            }
+            const start = performance.now();
+            const interval = setInterval(() => {
+              const elapsed = performance.now() - start;
+              if (elapsed >= 5000) {
+                clearInterval(interval); // Stop the interval
+                for (let i = 0; i < Bx.length; i++) {
+                  scene.remove(particleGroups[i]);
+                }
+                particleGroups = [];
+                resetM = true;
+                levelCleared = true;
+              }
+            }, 100); 
           }
       }
   }
 
  //camera transition
-
-
   if (panLeft) {  
     canPan = false;
     //can have a hashmap of directions
@@ -781,7 +790,6 @@ function animate() {
 
  ///// map resetting logic //// 
   if (resetM) {
-    //scene.remove(particles)
     for (let i = 0; i < Wx.length; i++) {
       scene.remove(walls[i]);
 
