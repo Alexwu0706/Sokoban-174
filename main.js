@@ -108,6 +108,7 @@ let boxPA_geometry = new THREE.ExtrudeGeometry(starShape, {
 });
 let wall_geometry = new THREE.BoxGeometry( 1, 1, 1 ); 
 let boxPB_geometry = new THREE.SphereGeometry(1 / 2.5);
+const starfield_geometry = new THREE.SphereGeometry(20);
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 // Shaders
@@ -164,7 +165,15 @@ const ground_material = new THREE.MeshStandardMaterial({
 const sky_texture = new THREE.CubeTextureLoader().load(['assets/finalproj_skybox_top_TEMP.png', 'assets/finalproj_skybox_top_TEMP.png', 'assets/finalproj_skybox_top_TEMP.png', 'assets/finalproj_skybox_top_TEMP.png', 'assets/finalproj_skybox_top_TEMP.png', 'assets/finalproj_skybox_top_TEMP.png']);
 sky_texture.colorSpace = THREE.SRGBColorSpace;
 scene.background = sky_texture;
-
+const star_material = new THREE.PointsMaterial({
+    size: 0.5,
+    sizeAttenuation: true
+});
+const star_particle = new THREE.Points(starfield_geometry, star_material);
+// scene.add(star_particle);
+// TODO: Finish implementing starfield. Right now it's just a sphere
+// https://github.com/mrdoob/three.js/blob/master/examples/webgl_points_billboards.html
+// https://codepen.io/boytchev/pen/mdgyQGz
 
 //storing map info 
 let players = []; // array of players
@@ -287,6 +296,8 @@ function initializeScene(flag){
      let winGlow = new THREE.PointLight(0x76a6d6, 0.5, 2, 1);
      box_target.add(winGlow);
      winGlow.position.set(0, -1, 0);
+     // ISSUE: Cannot figure out where the point is relative to the target
+     // Currently the lights don't appear
 
   let boxBB = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
   let box_TargetBB = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
