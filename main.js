@@ -201,7 +201,6 @@ function initializeScene(flag){
  console.log(Wx, "This is the data fetched for walls X");
 
  //add players to the scene
- let particle = new THREE.Points(particle_geometry, particle_material);
  playerPosition.set(0,0,0); //Initial position of player
  playerRotationY = 0; //Initial rotation of player
  for (let i = 0; i < 1; i++) {
@@ -567,13 +566,12 @@ let checkOnTarget = new THREE.Vector3();
 //translate target boxes l up and check for collision with boxes
 //check if all boxes are on their targets
 function checkTargetBoxes(){
- let glowLight = new THREE.PointLight(0xFFA500, 0.5, 2, 1);
  let boxesOnTargets = 0;
  let boxIsOnTarget = false;
  for (let i= 0; i < boxes_target.length; i++){
   boxIsOnTarget = false;
   checkOnTarget.set(boxes_target[i].position.x, boxes_target[i].position.y + l, boxes_target[i].position.z);
-  for (let j =   0; j < boxesBB.length; j++){
+  for (let j = 0; j < boxesBB.length; j++){
   //if there is a collision with any box update count
     if (movingCollisionCheck(checkOnTarget, boxesBB[j])){
       boxIsOnTarget = true;
