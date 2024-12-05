@@ -92,13 +92,7 @@ let boxPA_geometry = new THREE.ExtrudeGeometry(starShape, {
 });
 let wall_geometry = new THREE.BoxGeometry( 1, 1, 1 ); 
 let boxPB_geometry = new THREE.SphereGeometry(1 / 2.5);
-let particle_geometry = new THREE.BufferGeometry();
 
-///Initialization///
-const particle_material = new THREE.PointsMaterial({
-  color: 0xffffff, // White color
-  size: 0.1, // Particle size
-});
 const wall_material = new THREE.MeshPhongMaterial({
  color: 0x808080, //Gray color
  shininess: 100, 
@@ -179,6 +173,24 @@ let hat_Width = 0.2;
 let hat_Angle = Math.PI*25/180; 
 let star_Height = 0.3;
 let playerHands_Height = 0.1; // both hands are synced
+
+
+//particles 
+// let particleCount = 100;
+// let particle_positions = new Float32Array(particleCount * 3);
+
+// for (let i = 0; i < particleCount; i++) {
+//   particle_positions[i * 3] = Math.random() * 10 - 5; // Random x
+//   particle_positions[i * 3 + 1] = Math.random() * 10 - 5; // Random y
+//   particle_positions[i * 3 + 2] = Math.random() * 10 - 5; // Random z
+// }
+// const particleGeometry = new THREE.BufferGeometry();
+// particleGeometry.setAttribute('position', new THREE.BufferAttribute(particle_positions, 3));
+
+// const particleMaterial = new THREE.PointsMaterial({ color: 0xFFA500, size: 0.5 });
+// const particles = new THREE.Points(particleGeometry, particleMaterial);
+
+// scene.add(particles);
 
 function initializeScene(flag){
  flag = flag % 3; 
@@ -571,6 +583,20 @@ function checkTargetBoxes(){
  for (let i= 0; i < boxes_target.length; i++){
   boxIsOnTarget = false;
   checkOnTarget.set(boxes_target[i].position.x, boxes_target[i].position.y + l, boxes_target[i].position.z);
+  //particles 
+  // let particleCount = 100;
+  // let particle_positions = new Float32Array(particleCount * 3);
+
+  // for (let i = 0; i < particleCount; i++) {
+  //   particle_positions[i * 3] = Math.random() * 10 - 5; // location of boxes_target[i].x
+  //   particle_positions[i * 3 + 1] = Math.random() * 10 - 5; // location of boxes_target[i].y
+  //   particle_positions[i * 3 + 2] = Math.random() * 10 - 5; // location of boxes_target[i].z
+  // }
+  // const particleGeometry = new THREE.BufferGeometry();
+  // particleGeometry.setAttribute('position', new THREE.BufferAttribute(particle_positions, 3));
+
+  // const particleMaterial = new THREE.PointsMaterial({ color: 0xFFA500, size: 0.5 });
+  // const particles = new THREE.Points(particleGeometry, particleMaterial);
   for (let j = 0; j < boxesBB.length; j++){
   //if there is a collision with any box update count
     if (movingCollisionCheck(checkOnTarget, boxesBB[j])){
@@ -699,6 +725,8 @@ function animate() {
           previousPosition.copy(players[0].position); // Update the start position
           //check for win condition
           if (checkTargetBoxes() == boxes_target.length){
+            //particles end animation
+            //for a given time ; add particles to the scene above the tiles
             resetM = true;
             levelCleared = true;
           }
@@ -753,6 +781,7 @@ function animate() {
 
  ///// map resetting logic //// 
   if (resetM) {
+    //scene.remove(particles)
     for (let i = 0; i < Wx.length; i++) {
       scene.remove(walls[i]);
 
