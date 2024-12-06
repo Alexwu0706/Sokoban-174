@@ -151,6 +151,21 @@ const sky_texture = new THREE.CubeTextureLoader().load(['assets/finalproj_skybox
 sky_texture.colorSpace = THREE.SRGBColorSpace;
 scene.background = sky_texture;
 
+// particle group
+function createParticleGroup(particleCount, color, size, particleX, particleY, particleZ) {
+  const positions = new Float32Array(particleCount * 3);
+  for (let i = 0; i < particleCount; i++) {
+    positions[i * 3] = (Math.random() - 0.5)+particleX; // 
+    positions[i * 3 + 1] = (Math.random() - 0.5)+particleY + 3; // 
+    positions[i * 3 + 2] = (Math.random() - 0.5)+particleZ; // 
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  const material = new THREE.PointsMaterial({ color, size });
+  const particles = new THREE.Points(geometry, material);
+
+  return particles;
+}
 
 //storing map info 
 let players = []; // array of players
@@ -170,6 +185,7 @@ let boxesBB = []; //bounding box of boxes
 let boxes_target = []; //boxes target
 let grounds = [];
 let boxes_TargetBB = []; //bounding box of boxes target if all target boxes have a box in contact, then a win is triggered
+let particleGroups = [];
 
 //determining which map to display
 let playerPA_Height = 0.5;
@@ -309,6 +325,11 @@ function initializeScene(flag){
  for (let i=0; i< Gx.length; i++){
   grounds[i].scale.set(1,1/50,1);
   grounds[i].position.set(Gx[i],-l,Gz[i]);
+ }
+
+ for (let i=0; i < Bx.length; i++){
+  let particleGroup = createParticleGroup(100,0xFFA500,0.5,boxes_target[i].position.x,boxes_target[i].position.y,boxes_target[i].position.z);
+  particleGroups.push(particleGroup);
  }
 
  //add grid to scene
@@ -698,9 +719,23 @@ function animate() {
           animation_time_movement = 0; // Reset for future animations
           previousPosition.copy(players[0].position); // Update the start position
           //check for win condition
-          if (checkTargetBoxes() == boxes_target.length){
-            resetM = true;
-            levelCleared = true;
+          if (checkTargetBoxes() == boxes_target.length) {
+            for (let i = 0; i < Bx.length; i++) {
+              scene.add(particleGroups[i]);
+            }
+            const start = performance.now();
+            const interval = setInterval(() => {
+              const elapsed = performance.now() - start;
+              if (elapsed >= 1000) {
+                clearInterval(interval); // Stop the interval
+                for (let i = 0; i < Bx.length; i++) {
+                  scene.remove(particleGroups[i]);
+                }
+                particleGroups = [];
+                resetM = true;
+                levelCleared = true;
+              }
+            }, 100); 
           }
       }
   }
