@@ -426,6 +426,7 @@ let panLeft = false;
 let panRight = false;
 let canPan = true;
 let resetM = false;
+let levelCleared = false;
 let pushingHandOffset = 0.2;
 let playerRotation = 0; 
 let moveDirection = new THREE.Vector3();
@@ -448,7 +449,7 @@ setupClickDetection(camera, homePage)
 
 
 function movePlayer(moveDirection, rotation){
-  if (canMove){
+  if (canMove && !levelCleared){
     direction.set(moveDirection.x, moveDirection.y, moveDirection.z);
     targetPosition.set(players[0].position.x + direction.x, players[0].position.y + direction.y, players[0].position.z + direction.z);
     previousPosition.copy(players[0].position);
@@ -611,7 +612,6 @@ function checkTargetBoxes(){
 let animation_time = 0;
 let delta_animation_time;
 const clock = new THREE.Clock();
-let levelCleared = false;
 let flag = 1; //Map Update
 let T_player = 1.5; // Player's floating period in seconds
 let T_boxes = 1; // Boxes's floating period in seconds
@@ -712,14 +712,13 @@ function animate() {
             boxesBB[moveBoxIndex].setFromObject(boxes[moveBoxIndex]);
           }
           playersBB[0].setFromObject(players[0]);
-          canMove = true; 
-          isMoving = false;
           moveBoxIndex = -1; 
           direction.set(0,0,0);
           animation_time_movement = 0; // Reset for future animations
           previousPosition.copy(players[0].position); // Update the start position
           //check for win condition
           if (checkTargetBoxes() == boxes_target.length) {
+            levelCleared = true;
             for (let i = 0; i < Bx.length; i++) {
               scene.add(particleGroups[i]);
             }
@@ -733,10 +732,11 @@ function animate() {
                 }
                 particleGroups = [];
                 resetM = true;
-                levelCleared = true;
               }
             }, 100); 
           }
+          isMoving = false; 
+          canMove = true;
       }
   }
 
