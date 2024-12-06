@@ -95,6 +95,12 @@ const buttonUniforms = {
     opacity: { value: 0.8 } 
 }
 
+const titleBoxUniforms ={
+    color: { value: new THREE.Color(0x301934) }, // White color
+    borderRadius: { value: 0.1 }, 
+    opacity: { value: 0 } 
+}
+
 let homePage = new THREE.Group();
 
 const billboardGeometry = new THREE.PlaneGeometry(6, 6);
@@ -125,7 +131,12 @@ const buttonMaterial = new THREE.ShaderMaterial({
     transparent: true
 });
 
-let titleMesh;
+const titleBoxMaterial = new THREE.ShaderMaterial({
+    uniforms: titleBoxUniforms,
+    vertexShader: buttonShader.vertexShader(),
+    fragmentShader: buttonShader.fragmentShader(),
+    transparent: true
+});
 
 
 
@@ -133,32 +144,13 @@ let titleMesh;
 export function createHomePage(){
 
     const loader = new FontLoader();
-    loader.load('./assets/font.typeface.json', (font) => {
-        // Create Text
-        const textGeometry = new TextGeometry(TITLE, {
-            font: font,
-            size: 0.5,    // Font size
-            depth: 0.2,  // Depth of the text
-            curveSegments: 12, // Curve quality
-            bevelEnabled: true, // Optional beveling
-            bevelThickness: 0.03,
-            bevelSize: 0.02,
-        });
-        const textMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
-        titleMesh = new THREE.Mesh(textGeometry, textMaterial);
-        titleMesh.position.set(0, 2, 0.01);
-        centerText(titleMesh, billboardMesh);
-        titleMesh.position.y += 2;
-        titleMesh.name = 'title';
-        homePage.add(titleMesh);
-        console.log('added title');
-    });
-
+    let title = createTitle(TITLE, eventTrigger())
     //create buttons
     let playButton = createButton('Play', eventTrigger() );
     let instructionsButton = createButton('Instructions', eventTrigger());
-   
-    instructionsButton.position.y -= 2; 
+    title.position.y += 2;
+    instructionsButton.position.y -= 2;
+    homePage.add(title); 
     homePage.add(playButton);
     homePage.add(instructionsButton);
     homePage.add(billboardMesh);
@@ -203,6 +195,40 @@ function createButton(text, onClick){
 
 }
 
+//create title with transparent box
+function createTitle(text){
+    const title = new THREE.Group();
+    const loader = new FontLoader();
+    loader.load('./assets/font.typeface.json', (font) => {
+        // Create Text
+        const textGeometry = new TextGeometry(text, {
+            font: font,
+            size: 0.5,    // Font size
+            depth: 0.1,  // Depth of the text
+            curveSegments: 12, // Curve quality
+            bevelEnabled: true, // Optional beveling
+            bevelThickness: 0.03,
+            bevelSize: 0.02,
+        });
+        const textMaterial = new THREE.MeshBasicMaterial({ color: 0x0000000 });
+        const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+        textMesh.position.set(0,0,0.01)
+        textMesh.name = text + "Button";
+        
+        //create button background to be wider than text
+        const textBox = new THREE.Box3().setFromObject(textMesh);
+        const titleBG = new THREE.PlaneGeometry(textBox.max.x - textBox.min.x + 0.5, textBox.max.y - textBox.min.y + 0.5);
+        const titleMesh = new THREE.Mesh(titleBG, titleBoxMaterial);
+        titleMesh.name = text + "BG"
+        //center text on button
+        centerText(textMesh, titleMesh);
+        title.add(titleMesh);
+        title.add(textMesh);
+
+    });
+    return title;
+
+}
 
 
 //always center the text on billBoard
@@ -278,29 +304,34 @@ function eventTrigger(text){
 
 //fade homePage out and fade homePage in
 function expandHomePage() {
-    const duration = 1; // Duration of the animation in seconds
+    homePage.clear(); // Clear all children after scaling
+    populateInstructions(); // Add new content
+    //         populateInstructions(); // Add new content
+    //         populateInstructions(); // Add new content
+    // const duration = 1; // Duration of the animation in seconds
+    // let currentPosition = new THREE.Vector3();
 
-    const initialPosition = homePage.position.clone(); // Save current scale
-    const targetPosition = new THREE.Vector3(initialPosition.x, initialPosition.y + 8, initialPosition.z); // Desired expanded scale
+    // const initialPosition = homePage.position.clone(); // Save current scale
+    // const targetPosition = new THREE.Vector3(initialPosition.x, initialPosition.y + 8.0, initialPosition.z); // Desired expanded scale
 
 
-    const clock = new THREE.Clock();
-    function animate() {
-        const elapsed = clock.getElapsedTime();
-        const t = Math.min(elapsed / duration, 1); // Normalize time to [0, 1]
+    // const clock = new THREE.Clock();
+    // function animate() {
+    //     const elapsed = clock.getElapsedTime();
+    //     const t = Math.min(elapsed / duration, 1); // Normalize time to [0, 1]
+        
+    //     currentPosition.set(targetPosition.x, targetPosition.y * t, targetPosition.z);
+    //     homePage.position.set(currentPosition.x, currentPosition.y, currentPosition.z); // Set new scale
+    //     if (t >= 1) {
+    //         homePage.clear(); // Clear all children after scaling
+    //         populateInstructions(); // Add new content
+    //     } else {
+    //         requestAnimationFrame(animate);
+    //     }
+    // }
 
-        homePage.position.lerpVectors(initialPosition, targetPosition, t);
-
-        if (t < 1) {
-            requestAnimationFrame(animate); // Continue animation
-        } else {
-            homePage.clear(); // Clear all children after scaling
-            populateInstructions(); // Add new content
-        }
-    }
-
-    clock.start();
-    animate();
+    // clock.start();
+    // animate();
 }
 
 
@@ -313,13 +344,13 @@ function populateInstructions() {
         const instructionsText = new TextGeometry('Instructions :\nW,A,S,D to move \nR to reset level \nQ or E to change camera angle\nMove all stars to targets\ngood luck !', {
             font: font,
             size: 0.3,
-            depth: 0.1,
+            depth: 0.05,
             curveSegments: 12,
             bevelEnabled: true,
-            bevelThickness: 0.03,
+            bevelThickness: 0.02,
             bevelSize: 0.02,
         });
-        const textMaterial = new THREE.MeshBasicMaterial({ color: 0xBF40BF });
+        const textMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
         const textMesh = new THREE.Mesh(instructionsText, textMaterial);
         textMesh.position.set(0, 2, 0.01);
         //positioning text
@@ -353,5 +384,5 @@ function goBackToMenu(){
     billboardMesh.scale.set(1,1,1);
     homePage.clear();
     homePage = createHomePage();
-    //for some reason title did not reappear
+    
 }

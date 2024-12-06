@@ -7,6 +7,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
 let composer;
 const scene = new THREE.Scene();
 
@@ -45,23 +46,6 @@ let playerRotationY = 0;
 
 // Project
 // Setting up the lights
-function translationMatrix(tx, ty, tz) {
-	return new THREE.Matrix4().set(
-		1, 0, 0, tx,
-		0, 1, 0, ty,
-		0, 0, 1, tz,
-		0, 0, 0, 1
-	);
-}
-
-function rotationMatrixY(theta) {
-    return new THREE.Matrix4().set(
-        Math.cos(theta), 0, Math.sin(theta), 0,
-        0, 1, 0, 0,
-        -Math.sin(theta), 0, Math.cos(theta), 0,
-        0, 0, 0, 1
-    );
-}
 
 const ambientLight = new THREE.AmbientLight(0xd2d8f2, 0.015);
 scene.add(ambientLight);
@@ -108,12 +92,13 @@ let boxPA_geometry = new THREE.ExtrudeGeometry(starShape, {
 });
 let wall_geometry = new THREE.BoxGeometry( 1, 1, 1 ); 
 let boxPB_geometry = new THREE.SphereGeometry(1 / 2.5);
-const starfield_geometry = new THREE.SphereGeometry(20);
+let particle_geometry = new THREE.BufferGeometry();
 
-//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-// Shaders
-
-///Initialization////////////////////////////////////////////////////////////////
+///Initialization///
+const particle_material = new THREE.PointsMaterial({
+  color: 0xffffff, // White color
+  size: 0.1, // Particle size
+});
 const wall_material = new THREE.MeshPhongMaterial({
  color: 0x808080, //Gray color
  shininess: 100, 
@@ -138,9 +123,9 @@ const playerPD_material = new THREE.MeshPhongMaterial({
  shininess: 0.5
 }); 
 const boxPA_material = new THREE.MeshPhongMaterial({
-    color: 0xf9f9f6, // Star
+    color: 0xFFA500, // Star
     shininess: 100,
-    emissive: 0xf9f9f6
+    emissive: 0xFFA500
 })
 const boxPB_material = new THREE.MeshPhongMaterial({
  color: 0xFFFFFF, // Pure white color
@@ -165,15 +150,21 @@ const ground_material = new THREE.MeshStandardMaterial({
 const sky_texture = new THREE.CubeTextureLoader().load(['assets/skybox_side3.png', 'assets/skybox_side1.png', 'assets/skybox_top.png', 'assets/skybox_bottom.png', 'assets/skybox_side2.png', 'assets/skybox_side4.png']);
 sky_texture.colorSpace = THREE.SRGBColorSpace;
 scene.background = sky_texture;
-const star_material = new THREE.PointsMaterial({
-    size: 0.5,
-    sizeAttenuation: true
-});
-const star_particle = new THREE.Points(starfield_geometry, star_material);
-// scene.add(star_particle);
-// TODO: Finish implementing starfield. Right now it's just a sphere
-// https://github.com/mrdoob/three.js/blob/master/examples/webgl_points_billboards.html
-// https://codepen.io/boytchev/pen/mdgyQGz
+
+function createParticleGroup(particleCount, color, size, particleX, particleY, particleZ) {
+  const positions = new Float32Array(particleCount * 3);
+  for (let i = 0; i < particleCount; i++) {
+    positions[i * 3] = (Math.random() - 0.5)+particleX; // 
+    positions[i * 3 + 1] = (Math.random() - 0.5)+particleY + 3; // 
+    positions[i * 3 + 2] = (Math.random() - 0.5)+particleZ; // 
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  const material = new THREE.PointsMaterial({ color, size });
+  const particles = new THREE.Points(geometry, material);
+
+  return particles;
+}
 
 //storing map info 
 let players = []; // array of players
@@ -193,6 +184,7 @@ let boxesBB = []; //bounding box of boxes
 let boxes_target = []; //boxes target
 let grounds = [];
 let boxes_TargetBB = []; //bounding box of boxes target if all target boxes have a box in contact, then a win is triggered
+let particleGroups = [];
 
 //determining which map to display
 let playerPA_Height = 0.5;
@@ -202,12 +194,6 @@ let hat_Width = 0.2;
 let hat_Angle = Math.PI*25/180; 
 let star_Height = 0.3;
 let playerHands_Height = 0.1; // both hands are synced
-const pushingHand_Height = 0.3;  
-const pushingHand_Rotation = 1.5; //radians
-//(hat_Angle , 0, 0); (0, playerPC_Height, hat_Width) forward
-//(-hat_Angle , 0, 0); (0, playerPC_Height, -hat_Width) backward 
-//(0 , 0, hat_Angle); (-hat_Width, playerPC_Height, 0) Right
-//(0 , 0, -hat_Angle); (hat_Width, playerPC_Height, 0) Left
 
 function initializeScene(flag){
  flag = flag % 3; 
@@ -250,10 +236,12 @@ function initializeScene(flag){
  playerPC.position.set(hat_Width, playerPC_Height, 0); //Hat
  playerPC.rotation.set(0, 0, -hat_Angle);
  playerPD.position.set(0,0,0) //Just for Boundary detection, invisible
+ let glowLight = new THREE.PointLight(0xFFA500, 0.5, 2, 1);
  player.add(playerPA);
  player.add(playerPB);
  player.add(playerPC);
  player.add(playerPD);
+ player.add(glowLight);
  player.add(playerRightHand);
  player.add(playerLeftHand);
  playerPD.visible = false;
@@ -282,23 +270,18 @@ function initializeScene(flag){
   let box = new THREE.Group();
   let boxPA = new THREE.Mesh(boxPA_geometry,boxPA_material); //stars
   let boxPB = new THREE.Mesh(boxPB_geometry,boxPB_material); //transparent sphere
-     let boxPC = new THREE.Mesh(wall_geometry, boxPC_material); //Just for Boundary detection, invisible
-     let glowLight = new THREE.PointLight(0xf9f9f6, 0.5, 2, 1);
+  let boxPC = new THREE.Mesh(wall_geometry, boxPC_material); //Just for Boundary detection, invisible
+  let glowLight = new THREE.PointLight(0xFFA500, 0.5, 2, 1);
   boxPA.position.set(0,star_Height,0);
   boxPB.position.set(0,star_Height,0);
   boxPC.position.set(0,0,0); //Just for Boundary detection, invisible
-     boxPA.add(glowLight);
+  boxPA.add(glowLight);
   box.add(boxPA);
   box.add(boxPB);
-     box.add(boxPC);
+  box.add(boxPC);
   boxPC.visible = false; 
-     let box_target = new THREE.Mesh(wall_geometry, box_material);
-     let winGlow = new THREE.PointLight(0x76a6d6, 0.5, 2, 1);
-     box_target.add(winGlow);
-     winGlow.position.set(0, -1, 0);
-     // ISSUE: Cannot figure out where the point is relative to the target
-     // Currently the lights don't appear
 
+  let box_target = new THREE.Mesh(wall_geometry, box_material);
   let boxBB = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
   let box_TargetBB = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
   boxBB.setFromObject(box);
@@ -342,6 +325,11 @@ function initializeScene(flag){
  for (let i=0; i< Gx.length; i++){
   grounds[i].scale.set(1,1/50,1);
   grounds[i].position.set(Gx[i],-l,Gz[i]);
+ }
+
+ for (let i=0; i < Bx.length; i++){
+  let particleGroup = createParticleGroup(100,0xFFA500,0.5,boxes_target[i].position.x,boxes_target[i].position.y,boxes_target[i].position.z);
+  particleGroups.push(particleGroup);
  }
 
  //add grid to scene
@@ -426,6 +414,9 @@ function boxCollisionWithWalls(boxIndex, direction){
   return colliding
 }
 
+//depending on current radians, update the direction of each movement
+//returns a set of directions and rotations for each of radian cases
+
 
 /////Interaction (Player Motion; Boxes-players interaction; Boxes-Boxes interaction)///////////////////////////
 let isMoving = false; 
@@ -433,147 +424,151 @@ let canMove = true;
 let moveBoxIndex = -1; 
 let panLeft = false;
 let panRight = false;
+let canPan = true;
 let resetM = false;
 let pushingHandOffset = 0.2;
+let playerRotation = 0; 
+let moveDirection = new THREE.Vector3();
 let direction = new THREE.Vector3();
 let targetPosition = new THREE.Vector3();
 let previousPosition = new THREE.Vector3();
 let boxPreviousPosition = new THREE.Vector3();
 let previousLeftHandPosition = new THREE.Vector3();
 let previousRightHandPosition = new THREE.Vector3();
+let cameraTargetPosition = new THREE.Vector3(); 
+let previousCameraRotation = 0; //camera rotation in degrees
+let cameraRadius = 5; // Distance from the camera to the origin
+let currentControls = updateDirection(previousCameraRotation);
 //add homePage to scene initially
 let homePage = createHomePage();
 scene.add(homePage);
 
 //only allow player to move if game starts
-window.addEventListener('keydown', onKeyPress); // onKeyPress is called each time a key is pressed
 setupClickDetection(camera, homePage)
-// w = forward ; s = backward; a = left ; d = right
-//cam=0,10,10  forward = w backward = s left = a right = d
-//cam=10,10,0  forward = a backward = d left = s right = w
-//cam=0,10,-10 forward = s backward = w left = d right = a
-//cam=-10,10,0 forward = d backward = a left = w right = s
+
+
+function movePlayer(moveDirection, rotation){
+  if (canMove){
+    direction.set(moveDirection.x, moveDirection.y, moveDirection.z);
+    targetPosition.set(players[0].position.x + direction.x, players[0].position.y + direction.y, players[0].position.z + direction.z);
+    previousPosition.copy(players[0].position);
+    //rotate player no matter if it moves or not
+    players[0].rotation.y = rotation;
+    //check if player moving into wall
+    if (playerCollisionWall(targetPosition)){
+      isMoving = false;
+      return;
+    }
+    //check if player moving into box 
+    //index of box to be moved returned if can be moved
+    moveBoxIndex = playerCollisionBox(targetPosition, direction);
+    if (moveBoxIndex == -2){
+      console.log('box collision')
+      isMoving = false;
+      return;
+    } else if (moveBoxIndex != -1){
+      players[0].children[5].position.set(players[0].children[5].position.x - pushingHandOffset, players[0].children[5].position.y,players[0].children[5].position.z);
+      players[0].children[6].position.set(players[0].children[6].position.x - pushingHandOffset, players[0].children[6].position.y,players[0].children[6].position.z);
+      boxPreviousPosition.copy(boxes[moveBoxIndex].position);
+    }
+    isMoving = true;
+  } 
+}
+
+function updateDirection(degrees){
+  console.log(degrees)
+  switch(degrees){
+    case 0:
+      return {
+        "W": [new THREE.Vector3(0,0,-1), -Math.PI/2],
+        "A": [new THREE.Vector3(-1,0,0), 0],
+        "S": [new THREE.Vector3(0,0,1), Math.PI/2],
+        "D": [new THREE.Vector3(1,0,0), Math.PI], 
+      }
+    case 90:
+      return {
+        "W": [new THREE.Vector3(-1,0,0), 0],
+        "A": [new THREE.Vector3(0,0,1), Math.PI/2],
+        "S": [new THREE.Vector3(1,0,0), Math.PI],
+        "D": [new THREE.Vector3(0,0,-1), -Math.PI/2],
+      }
+    case 180:
+      return {
+        "W": [new THREE.Vector3(0,0,1), Math.PI/2],
+        "A": [new THREE.Vector3(1,0,0), Math.PI],
+        "S": [new THREE.Vector3(0,0,-1), -Math.PI/2],
+        "D": [new THREE.Vector3(-1,0,0), 0],
+      }
+    case 270:
+      return {
+        "W": [new THREE.Vector3(1,0,0), Math.PI],
+        "A": [new THREE.Vector3(0,0,-1), -Math.PI/2],
+        "S": [new THREE.Vector3(-1,0,0), 0],
+        "D": [new THREE.Vector3(0,0,1), Math.PI/2],
+      }
+    default:
+      console.log("none")
+      break;
+  }
+}
+
+
+
+window.addEventListener('keydown', onKeyPress); // onKeyPress is called each time a key is pressed
 function onKeyPress(event) {
   if(gameStart){
     switch (event.key) {
 
       case 'w': 
-      if (canMove){
-        targetPosition.set(players[0].position.x, players[0].position.y, players[0].position.z - 1);
-        previousPosition.copy(players[0].position);
-        //rotate player no matter if it moves or not
-        players[0].rotation.y = -Math.PI / 2;
-        direction.set(0,0,-1);
-        //check if player moving into wall
-        if (playerCollisionWall(targetPosition)){
-          isMoving = false;
-          break; 
-        }
-        //check if player moving into box 
-        //index of box to be moved returned if can be moved
-        moveBoxIndex = playerCollisionBox(targetPosition, direction);
-        if (moveBoxIndex == -2){
-          console.log('box collision')
-          isMoving = false;
-          break;
-        } else if (moveBoxIndex != -1){
-          players[0].children[5].position.set(players[0].children[5].position.x - pushingHandOffset, players[0].children[5].position.y,players[0].children[5].position.z);
-          players[0].children[4].position.set(players[0].children[4].position.x - pushingHandOffset, players[0].children[4].position.y,players[0].children[4].position.z);
-          boxPreviousPosition.copy(boxes[moveBoxIndex].position);
-        }
-        isMoving = true;
-      } 
-      break;
+        playerRotation = currentControls["W"][1];
+        moveDirection = currentControls["W"][0];
+        console.log(currentControls);
+        movePlayer(moveDirection, playerRotation);
+        break;
 
       case 'a': 
-      if (canMove){
-        targetPosition.set(players[0].position.x - 1, players[0].position.y, players[0].position.z);
-        previousPosition.copy(players[0].position);
-        players[0].rotation.y = 0;
-        direction.set(-1,0,0);
-        //check if player moving into wall
-        if (playerCollisionWall(targetPosition)){
-          isMoving = false;
-          break; 
-        }
-        //check if player moving into box 
-        //index of box to be moved returned if can be moved
-        moveBoxIndex = playerCollisionBox(targetPosition, direction);
-        if (moveBoxIndex == -2){
-          console.log('box collision')
-          isMoving = false;
-          break;
-        } else if (moveBoxIndex != -1){
-          players[0].children[5].position.set(players[0].children[5].position.x - pushingHandOffset, players[0].children[5].position.y,players[0].children[5].position.z);
-          players[0].children[4].position.set(players[0].children[4].position.x - pushingHandOffset, players[0].children[4].position.y,players[0].children[4].position.z);
-          console.log(boxes[moveBoxIndex].position, "currentPosition");
-          boxPreviousPosition.copy(boxes[moveBoxIndex].position);
-        }
-        isMoving = true; 
+        playerRotation = currentControls["A"][1];
+        moveDirection = currentControls["A"][0];
+        movePlayer(moveDirection, playerRotation);
         break;
-      }
       case 's': 
-      if (canMove){
-        console.log(boxes_target)
-        targetPosition.set(players[0].position.x, players[0].position.y, players[0].position.z + 1);
-        previousPosition.copy(players[0].position);
-        players[0].rotation.y = Math.PI / 2;
-        direction.set(0,0,1);
-        //check if player moving into wall
-        if (playerCollisionWall(targetPosition)){
-          isMoving = false;
-          break; 
-        }
-        //check if player moving into box 
-        //index of box to be moved returned if can be moved
-        moveBoxIndex = playerCollisionBox(targetPosition, direction);
-        if (moveBoxIndex == -2){
-          console.log('box collision')
-          isMoving = false;
-          break;
-        } else if (moveBoxIndex != -1){
-          players[0].children[5].position.set(players[0].children[5].position.x - pushingHandOffset, players[0].children[5].position.y,players[0].children[5].position.z);
-          players[0].children[4].position.set(players[0].children[4].position.x - pushingHandOffset, players[0].children[4].position.y,players[0].children[4].position.z);
-          boxPreviousPosition.copy(boxes[moveBoxIndex].position);
-        }
-        
-        isMoving = true; 
+        playerRotation = currentControls["S"][1];
+        moveDirection = currentControls["S"][0];
+        movePlayer(moveDirection, playerRotation);
         break;
-      }
 
       case 'd': 
-      if (canMove){
-        targetPosition.set(players[0].position.x + 1, players[0].position.y, players[0].position.z);
-        previousPosition.copy(players[0].position);
-        players[0].rotation.y = Math.PI;
-        direction.set(1,0,0);
-        //check if player moving into wall
-        if (playerCollisionWall(targetPosition)){
-          isMoving = false;
-          break; 
-        }
-        //check if player moving into box 
-        //index of box to be moved returned if can be moved
-        moveBoxIndex = playerCollisionBox(targetPosition, direction);
-        if (moveBoxIndex == -2){
-          console.log('box collision')
-          isMoving = false;
-          break;
-        } else if (moveBoxIndex != -1){
-          players[0].children[5].position.set(players[0].children[5].position.x - pushingHandOffset, players[0].children[5].position.y,players[0].children[5].position.z);
-          players[0].children[4].position.set(players[0].children[4].position.x - pushingHandOffset, players[0].children[4].position.y,players[0].children[4].position.z);
-          boxPreviousPosition.copy(boxes[moveBoxIndex].position);
-        }
-        isMoving = true; 
+        playerRotation = currentControls["D"][1];
+        moveDirection = currentControls["D"][0];
+        movePlayer(moveDirection, playerRotation);
         break;
-      }
 
       case 'q':
-      panLeft = true; // Rotate camera counterclockwise
+      if (canPan){
+        if(previousCameraRotation == 270){
+          previousCameraRotation = 0;
+        } else {
+          previousCameraRotation += 90
+        }
+
+        //update controls
+        currentControls = updateDirection(previousCameraRotation);
+        panLeft = true; // Rotate camera counterclockwise
+      }
       break;
 
       case 'e':
-      panRight = true; // Rotate camera clockwise
+      if (canPan){
+        if (previousCameraRotation == 0){
+          previousCameraRotation = 270;
+        } else {
+          previousCameraRotation -= 90
+        }
+
+        //update controls
+        currentControls = updateDirection(previousCameraRotation);
+        panRight = true; // Rotate camera clockwise
+      }
       break;
 
       case 'r':
@@ -597,7 +592,7 @@ function checkTargetBoxes(){
  for (let i= 0; i < boxes_target.length; i++){
   boxIsOnTarget = false;
   checkOnTarget.set(boxes_target[i].position.x, boxes_target[i].position.y + l, boxes_target[i].position.z);
-  for (let j =   0; j < boxesBB.length; j++){
+  for (let j = 0; j < boxesBB.length; j++){
   //if there is a collision with any box update count
     if (movingCollisionCheck(checkOnTarget, boxesBB[j])){
       boxIsOnTarget = true;
@@ -605,12 +600,12 @@ function checkTargetBoxes(){
   }
   if (boxIsOnTarget){
     boxesOnTargets++;
+    
   }
  }
  return boxesOnTargets
 
 }
-
 
 ///animation////////////////////////////////////////////////////////////////
 let animation_time = 0;
@@ -620,8 +615,11 @@ let levelCleared = false;
 let flag = 1; //Map Update
 let T_player = 1.5; // Player's floating period in seconds
 let T_boxes = 1; // Boxes's floating period in seconds
-let duration = 0.5; // Duration of player movement in seconds
-let animation_time_movement = 0; 
+const duration = 0.5; // Duration of player movement in seconds
+let animation_time_movement = 0
+const cameraRotationDuration = 0.5;
+let camera_animation_time = 0; 
+let angle = 0; 
 //to animate player movement: 
 /*
   - WASD should trigger a target position for player
@@ -630,9 +628,6 @@ let animation_time_movement = 0;
 
 
 */
-
-
-
 function animate() {
  controls.update();
 
@@ -663,17 +658,16 @@ function animate() {
  players[0].children[0].position.y = floating_player + playerPA_Height; 
  players[0].children[1].position.y = floating_player + playerPB_Height; 
  players[0].children[2].position.y = floating_player + playerPC_Height; 
- players[0].children[4].position.y = floating_player + playerHands_Height;
  players[0].children[5].position.y = floating_player + playerHands_Height;
+ players[0].children[6].position.y = floating_player + playerHands_Height;
 
  //Box Self-Motion
  let floating_boxes = 0.2*Math.sin(animation_time*2*Math.PI/T_boxes+Math.PI/2);
  for(let i = 0; i < Bx.length; i++){
- boxes[i].children[0].position.y = floating_boxes + star_Height;
- //boxes[i].children[1].position.y = floating_boxes + star_Height;
- boxes[i].children[0].rotation.x = animation_time;
- boxes[i].children[0].rotation.y = animation_time;
- //boxes[i].children[0].rotation.z = animation_time;
+  boxes[i].children[0].rotation.x = animation_time;
+  boxes[i].children[0].rotation.y = animation_time;
+  boxes[i].children[0].position.y = floating_boxes + star_Height;
+  boxes[i].children[1].position.y = floating_boxes + star_Height;
  }
  //player movement along with box movement
  //need to reset isMoving, direction, moveBoxIndex after player has moved
@@ -685,13 +679,11 @@ function animate() {
       // Smooth easing
       let oscilation = 0.5 * (1 - Math.cos(progress * Math.PI)); // From 0 to 1
       let armOscilation = Math.sin(progress * Math.PI) * (Math.PI / 2);
-      let armDistance = Math.sin(progress * Math.PI) * 0.2;
 
 
 
       // Update the player's position
       if (moveBoxIndex != -1){
-        console.log(boxPreviousPosition, "boxPreviousPosition");
         //console.log(boxes[moveBoxIndex].position);
         boxes[moveBoxIndex].position.set(
           boxPreviousPosition.x + oscilation * direction.x,
@@ -702,7 +694,7 @@ function animate() {
         //left arm
         players[0].children[5].rotation.z = -armOscilation;
         //right arm
-        players[0].children[4].rotation.z = -armOscilation;
+        players[0].children[6].rotation.z = -armOscilation;
       }
 
       players[0].position.set(
@@ -716,7 +708,7 @@ function animate() {
           if (moveBoxIndex != -1){
             //move arms back to original 
             players[0].children[5].position.x += pushingHandOffset;
-            players[0].children[4].position.x += pushingHandOffset;
+            players[0].children[6].position.x += pushingHandOffset;
             boxesBB[moveBoxIndex].setFromObject(boxes[moveBoxIndex]);
           }
           playersBB[0].setFromObject(players[0]);
@@ -727,38 +719,69 @@ function animate() {
           animation_time_movement = 0; // Reset for future animations
           previousPosition.copy(players[0].position); // Update the start position
           //check for win condition
-          if (checkTargetBoxes() == boxes_target.length){
-            resetM = true;
-            levelCleared = true;
+          if (checkTargetBoxes() == boxes_target.length) {
+            for (let i = 0; i < Bx.length; i++) {
+              scene.add(particleGroups[i]);
+            }
+            const start = performance.now();
+            const interval = setInterval(() => {
+              const elapsed = performance.now() - start;
+              if (elapsed >= 2000) {
+                clearInterval(interval); // Stop the interval
+                for (let i = 0; i < Bx.length; i++) {
+                  scene.remove(particleGroups[i]);
+                }
+                particleGroups = [];
+                resetM = true;
+                levelCleared = true;
+              }
+            }, 100); 
           }
       }
   }
+
  //camera transition
-// if (panLeft) {
-// let camTransform = new THREE.Matrix4();
-// camTransform.multiplyMatrices(translationMatrix(camLastPos.x, camLastPos.y, camLastPos.z), camTransform);
-// camTransform.multiplyMatrices(rotationMatrixY(90), camTransform);
-// let cameraPosition = new THREE.Vector3();
-// cameraPosition.setFromMatrixPosition(camTransform);
-// // lerp is a little janky, makes the camera move upward which I don't like
-// // If there is a way to do a smooth movement while keeping the camera's z-position the same it would be better
-// camera.position.lerp(cameraPosition, 0.12);
-// if (camera.position.distanceTo(cameraPosition) < 0.01) {
-// panLeft = false;
-// camLastPos = cameraPosition;
-// }
-// } else if (panRight) {
-// let camTransform = new THREE.Matrix4();
-// camTransform.multiplyMatrices(translationMatrix(camLastPos.x, camLastPos.y, camLastPos.z), camTransform);
-// camTransform.multiplyMatrices(rotationMatrixY(-90), camTransform);
-// let cameraPosition = new THREE.Vector3();
-// cameraPosition.setFromMatrixPosition(camTransform);
-// camera.position.lerp(cameraPosition, 0.12);
-// if (camera.position.distanceTo(cameraPosition) < 0.01) {
-// panRight = false;
-// camLastPos = cameraPosition;
-// }
-// }
+
+
+  if (panLeft) {  
+    canPan = false;
+    //can have a hashmap of directions
+    camera_animation_time += delta_animation_time;
+    let progress = Math.min(camera_animation_time / cameraRotationDuration, 1); // Clamp to [0, 1]
+    // Smooth easing
+    let oscilation = (Math.PI/4) * (1 - Math.cos(progress * Math.PI)); // From 0 to PI/2
+    let newAngle = angle + oscilation;
+    // Update camera position (keeping the same radius)
+    camera.position.x = cameraRadius * Math.sin(newAngle);
+    camera.position.z = cameraRadius * Math.cos(newAngle);
+
+    if (progress >= 1) {
+      angle = newAngle;
+      panLeft = false; 
+      canPan = true; //add if statement to wait for animation to finish
+      camera_animation_time = 0;
+    }
+  }
+
+  if (panRight) {
+    canPan = false;
+    //can have a hashmap of directions
+    camera_animation_time += delta_animation_time;
+    let progress = Math.min(camera_animation_time / cameraRotationDuration, 1); // Clamp to [0, 1]
+    // Smooth easing
+    let oscilation = (Math.PI/4) * (1 - Math.cos(progress * Math.PI)); // From 0 to PI/2
+    let newAngle = angle - oscilation;
+    // Update camera position (keeping the same radius)
+    camera.position.x = cameraRadius * Math.sin(newAngle);
+    camera.position.z = cameraRadius * Math.cos(newAngle);
+
+    if (progress >= 1) {
+      angle = newAngle;
+      panRight = false; 
+      canPan = true; //add if statement to wait for animation to finish
+      camera_animation_time = 0;
+    }
+  }
 
 
 
