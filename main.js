@@ -22,7 +22,7 @@ const renderScene = new RenderPass(scene, camera);
 
 const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
 bloomPass.threshold = 0;
-bloomPass.strength = 0.2;
+bloomPass.strength = 0;
 bloomPass.radius = 1;
 
 const outputPass = new OutputPass();
@@ -47,7 +47,7 @@ let playerRotationY = 0;
 // Project
 // Setting up the lights
 
-const ambientLight = new THREE.AmbientLight(0xd2d8f2, 0.02);
+const ambientLight = new THREE.AmbientLight(0xd2d8f2, 0.015);
 scene.add(ambientLight);
 
 //game states
@@ -139,7 +139,7 @@ const boxPC_material = new THREE.MeshPhongMaterial({
 const goal_texture = new THREE.TextureLoader().load('assets/finalproj_goal_tile.png');
 goal_texture.colorSpace = THREE.SRGBColorSpace;
 const box_material = new THREE.MeshStandardMaterial({
- map: goal_texture
+    map: goal_texture
 });
 const ground_texture = new THREE.TextureLoader().load('assets/finalproj_floor_tile.png');
 ground_texture.colorSpace = THREE.SRGBColorSpace;
@@ -147,11 +147,10 @@ const ground_material = new THREE.MeshStandardMaterial({
     map: ground_texture
 });
 // skybox texture needs modification
-const sky_texture = new THREE.CubeTextureLoader().load(['assets/finalproj_skybox_top_TEMP.png', 'assets/finalproj_skybox_top_TEMP.png', 'assets/finalproj_skybox_top_TEMP.png', 'assets/finalproj_skybox_top_TEMP.png', 'assets/finalproj_skybox_top_TEMP.png', 'assets/finalproj_skybox_top_TEMP.png']);
+const sky_texture = new THREE.CubeTextureLoader().load(['assets/skybox_side3.png', 'assets/skybox_side1.png', 'assets/skybox_top.png', 'assets/skybox_bottom.png', 'assets/skybox_side2.png', 'assets/skybox_side4.png']);
 sky_texture.colorSpace = THREE.SRGBColorSpace;
 scene.background = sky_texture;
 
-// particle group
 function createParticleGroup(particleCount, color, size, particleX, particleY, particleZ) {
   const positions = new Float32Array(particleCount * 3);
   for (let i = 0; i < particleCount; i++) {
@@ -281,6 +280,7 @@ function initializeScene(flag){
   box.add(boxPB);
   box.add(boxPC);
   boxPC.visible = false; 
+
   let box_target = new THREE.Mesh(wall_geometry, box_material);
   let boxBB = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
   let box_TargetBB = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
@@ -297,7 +297,7 @@ function initializeScene(flag){
  }
  //add ground tiles to scene
  for (let i=0; i< Gx.length; i++){
-  let ground = new THREE.Mesh(wall_geometry, ground_material);
+     let ground = new THREE.Mesh(wall_geometry, ground_material);
   grounds.push(ground);
   scene.add(ground);
  }
@@ -843,7 +843,8 @@ document.addEventListener('buttonClick', (event) => {
 
 function startGame(){
   gameStart = true; 
-  scene.remove(homePage);
+    scene.remove(homePage);
+    bloomPass.strength = 0.25;
   camera.position.copy(startGameCameraPosition)
 }
 
