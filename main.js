@@ -726,7 +726,7 @@ function animate() {
             const start = performance.now();
             const interval = setInterval(() => {
               const elapsed = performance.now() - start;
-              if (elapsed >= 1000) {
+              if (elapsed >= 2000) {
                 clearInterval(interval); // Stop the interval
                 for (let i = 0; i < Bx.length; i++) {
                   scene.remove(particleGroups[i]);
