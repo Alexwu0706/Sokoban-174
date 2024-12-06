@@ -34,21 +34,43 @@ composer.addPass(outputPass);
 
 
 document.body.appendChild( renderer.domElement );
-const startGameCameraPosition = new THREE.Vector3(0, 10, 5);
+const startGameCameraPosition = new THREE.Vector3(0, 10, 8);
 const homeScreenCameraPosition = new THREE.Vector3(0, 12, 10);
 const controls = new OrbitControls(camera, renderer.domElement);
 camera.position.set(0,10,10); //after demo(5, 10, 5)
-let camLastPos = new THREE.Vector3(5, 10, 5); // For keeping track of rotation. Not the most elegant
 controls.target.set(0, 0, 0);
 
 let playerPosition = new THREE.Vector3(0, 0, 0);
 let playerRotationY = 0;
 
-// Project
 // Setting up the lights
 
-const ambientLight = new THREE.AmbientLight(0xd2d8f2, 0.015);
+const ambientLight = new THREE.AmbientLight(0x333e69, 1);
 scene.add(ambientLight);
+
+class Burst {
+    constructor(scene, position) {
+        this.scene = scene;
+        this.position = position;
+
+        this.nparticles = 200;
+        this.lifetime = 2;
+
+        const geometry = new THREE.BufferGeometry();
+        const positions = [];
+        const velocities = [];
+
+        for (let i = 0; i < this.numParticles; i++) {
+            positions.push(0, 0, 0);
+            velocities.push(
+                (Math.random() - 0.5) * 2,
+                (Math.random() - 0.5) * 2,
+                (Math.random() - 0.5) * 2
+            );
+        }
+    }
+}
+
 
 //game states
 let gameStart = false; 
@@ -123,9 +145,9 @@ const playerPD_material = new THREE.MeshPhongMaterial({
  shininess: 0.5
 }); 
 const boxPA_material = new THREE.MeshPhongMaterial({
-    color: 0xFFA500, // Star
+    color: 0xfafad7, // Star
     shininess: 100,
-    emissive: 0xFFA500
+    emissive: 0xfafad7
 })
 const boxPB_material = new THREE.MeshPhongMaterial({
  color: 0xFFFFFF, // Pure white color
@@ -194,8 +216,10 @@ let hat_Width = 0.2;
 let hat_Angle = Math.PI*25/180; 
 let star_Height = 0.3;
 let playerHands_Height = 0.1; // both hands are synced
+let previousCameraRotation = 0; //camera rotation in degrees
 
 function initializeScene(flag){
+ //reset camera position
  flag = flag % 3; 
  if(flag == 0){
   flag = 3;
@@ -236,12 +260,12 @@ function initializeScene(flag){
  playerPC.position.set(hat_Width, playerPC_Height, 0); //Hat
  playerPC.rotation.set(0, 0, -hat_Angle);
  playerPD.position.set(0,0,0) //Just for Boundary detection, invisible
- let glowLight = new THREE.PointLight(0xFFA500, 0.5, 2, 1);
+ let playerGlow = new THREE.PointLight(0xfafad7, 0.2, 2, 1);
  player.add(playerPA);
  player.add(playerPB);
  player.add(playerPC);
  player.add(playerPD);
- player.add(glowLight);
+ player.add(playerGlow);
  player.add(playerRightHand);
  player.add(playerLeftHand);
  playerPD.visible = false;
@@ -271,7 +295,7 @@ function initializeScene(flag){
   let boxPA = new THREE.Mesh(boxPA_geometry,boxPA_material); //stars
   let boxPB = new THREE.Mesh(boxPB_geometry,boxPB_material); //transparent sphere
   let boxPC = new THREE.Mesh(wall_geometry, boxPC_material); //Just for Boundary detection, invisible
-  let glowLight = new THREE.PointLight(0xFFA500, 0.5, 2, 1);
+  let glowLight = new THREE.PointLight(0xfafad7, 0.5, 2, 1);
   boxPA.position.set(0,star_Height,0);
   boxPB.position.set(0,star_Height,0);
   boxPC.position.set(0,0,0); //Just for Boundary detection, invisible
@@ -328,7 +352,7 @@ function initializeScene(flag){
  }
 
  for (let i=0; i < Bx.length; i++){
-  let particleGroup = createParticleGroup(100,0xFFA500,0.1,boxes_target[i].position.x,boxes_target[i].position.y,boxes_target[i].position.z);
+  let particleGroup = createParticleGroup(100,0xfafad7,0.1,boxes_target[i].position.x,boxes_target[i].position.y,boxes_target[i].position.z);
   particleGroups.push(particleGroup);
  }
 
@@ -437,7 +461,6 @@ let boxPreviousPosition = new THREE.Vector3();
 let previousLeftHandPosition = new THREE.Vector3();
 let previousRightHandPosition = new THREE.Vector3();
 let cameraTargetPosition = new THREE.Vector3(); 
-let previousCameraRotation = 0; //camera rotation in degrees
 let cameraRadius = 5; // Distance from the camera to the origin
 let currentControls = updateDirection(previousCameraRotation);
 //add homePage to scene initially
@@ -477,7 +500,6 @@ function movePlayer(moveDirection, rotation){
 }
 
 function updateDirection(degrees){
-  console.log(degrees)
   switch(degrees){
     case 0:
       return {
@@ -607,6 +629,30 @@ function checkTargetBoxes(){
  return boxesOnTargets
 
 }
+//play this effect when player wins
+function winParticleEffect(){
+  // winCameraPosition = new THREE.Vector3(players[0].position.x + 2, 0.5, players[0].position.z);
+  // camera.position.copy(winCameraPosition);
+  camera.position.set(14, -5, 10);
+  for (let i = 0; i < Bx.length; i++) {
+    scene.add(particleGroups[i]);
+  }
+  const start = performance.now();
+  const interval = setInterval(() => {
+    const elapsed = performance.now() - start;
+    if (elapsed >= 2000) {
+      clearInterval(interval); // Stop the interval
+      for (let i = 0; i < Bx.length; i++) {
+        scene.remove(particleGroups[i]);
+      }
+      particleGroups = [];
+      resetM = true;
+    }
+  }, 100);
+
+  //reset camera
+}
+
 
 ///animation////////////////////////////////////////////////////////////////
 let animation_time = 0;
@@ -719,21 +765,7 @@ function animate() {
           //check for win condition
           if (checkTargetBoxes() == boxes_target.length) {
             levelCleared = true;
-            for (let i = 0; i < Bx.length; i++) {
-              scene.add(particleGroups[i]);
-            }
-            const start = performance.now();
-            const interval = setInterval(() => {
-              const elapsed = performance.now() - start;
-              if (elapsed >= 2000) {
-                clearInterval(interval); // Stop the interval
-                for (let i = 0; i < Bx.length; i++) {
-                  scene.remove(particleGroups[i]);
-                }
-                particleGroups = [];
-                resetM = true;
-              }
-            }, 100); 
+            winParticleEffect();
           }
           isMoving = false; 
           canMove = true;
@@ -785,7 +817,6 @@ function animate() {
 
 
 
-
  ///// map resetting logic //// 
   if (resetM) {
     for (let i = 0; i < Wx.length; i++) {
@@ -813,8 +844,14 @@ function animate() {
     players.length = 0;
     playersBB.length = 0;
 
-  //only advance if level cleared
+  //only advance if level cleared and reset camera
     if (levelCleared){
+      camera.position.set(startGameCameraPosition.x, startGameCameraPosition.y, startGameCameraPosition.z);
+      camera.lookAt(0, 0, 0);
+      playerRotation = 0; 
+      previousCameraRotation = 0
+      console.log(camera.position, "camera position");
+      updateDirection(previousCameraRotation);
       console.log(flag, "flag");
       flag = flag + 1;
       levelCleared = false;
@@ -845,7 +882,7 @@ function startGame(){
   gameStart = true; 
     scene.remove(homePage);
     bloomPass.strength = 0.25;
-  camera.position.copy(startGameCameraPosition)
+    camera.position.copy(startGameCameraPosition)
 }
 
 //fetch map data then intialize and begin animating the game
@@ -856,6 +893,7 @@ fetch ('./maps.json')
   mapData = data; 
   initializeScene(1); //initialize scene with map 1
   renderer.setAnimationLoop( animate );
+  camera.position.set(0, 10, 10)
 })
 .catch(error => {
   console.error('Error fetching Maps', error);
