@@ -48,29 +48,6 @@ let playerRotationY = 0;
 const ambientLight = new THREE.AmbientLight(0x333e69, 1);
 scene.add(ambientLight);
 
-class Burst {
-    constructor(scene, position) {
-        this.scene = scene;
-        this.position = position;
-
-        this.nparticles = 200;
-        this.lifetime = 2;
-
-        const geometry = new THREE.BufferGeometry();
-        const positions = [];
-        const velocities = [];
-
-        for (let i = 0; i < this.numParticles; i++) {
-            positions.push(0, 0, 0);
-            velocities.push(
-                (Math.random() - 0.5) * 2,
-                (Math.random() - 0.5) * 2,
-                (Math.random() - 0.5) * 2
-            );
-        }
-    }
-}
-
 
 //game states
 let gameStart = false; 
