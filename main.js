@@ -38,17 +38,39 @@ const startGameCameraPosition = new THREE.Vector3(0, 10, 8);
 const homeScreenCameraPosition = new THREE.Vector3(0, 12, 10);
 const controls = new OrbitControls(camera, renderer.domElement);
 camera.position.set(0,10,10); //after demo(5, 10, 5)
-let camLastPos = new THREE.Vector3(5, 10, 5); // For keeping track of rotation. Not the most elegant
 controls.target.set(0, 0, 0);
 
 let playerPosition = new THREE.Vector3(0, 0, 0);
 let playerRotationY = 0;
 
-// Project
 // Setting up the lights
 
-const ambientLight = new THREE.AmbientLight(0xd2d8f2, 0.015);
+const ambientLight = new THREE.AmbientLight(0x333e69, 1);
 scene.add(ambientLight);
+
+class Burst {
+    constructor(scene, position) {
+        this.scene = scene;
+        this.position = position;
+
+        this.nparticles = 200;
+        this.lifetime = 2;
+
+        const geometry = new THREE.BufferGeometry();
+        const positions = [];
+        const velocities = [];
+
+        for (let i = 0; i < this.numParticles; i++) {
+            positions.push(0, 0, 0);
+            velocities.push(
+                (Math.random() - 0.5) * 2,
+                (Math.random() - 0.5) * 2,
+                (Math.random() - 0.5) * 2
+            );
+        }
+    }
+}
+
 
 //game states
 let gameStart = false; 
@@ -123,9 +145,9 @@ const playerPD_material = new THREE.MeshPhongMaterial({
  shininess: 0.5
 }); 
 const boxPA_material = new THREE.MeshPhongMaterial({
-    color: 0xFFA500, // Star
+    color: 0xfafad7, // Star
     shininess: 100,
-    emissive: 0xFFA500
+    emissive: 0xfafad7
 })
 const boxPB_material = new THREE.MeshPhongMaterial({
  color: 0xFFFFFF, // Pure white color
@@ -238,12 +260,12 @@ function initializeScene(flag){
  playerPC.position.set(hat_Width, playerPC_Height, 0); //Hat
  playerPC.rotation.set(0, 0, -hat_Angle);
  playerPD.position.set(0,0,0) //Just for Boundary detection, invisible
- let glowLight = new THREE.PointLight(0xFFA500, 0.5, 2, 1);
+ let playerGlow = new THREE.PointLight(0xfafad7, 0.2, 2, 1);
  player.add(playerPA);
  player.add(playerPB);
  player.add(playerPC);
  player.add(playerPD);
- player.add(glowLight);
+ player.add(playerGlow);
  player.add(playerRightHand);
  player.add(playerLeftHand);
  playerPD.visible = false;
@@ -273,7 +295,7 @@ function initializeScene(flag){
   let boxPA = new THREE.Mesh(boxPA_geometry,boxPA_material); //stars
   let boxPB = new THREE.Mesh(boxPB_geometry,boxPB_material); //transparent sphere
   let boxPC = new THREE.Mesh(wall_geometry, boxPC_material); //Just for Boundary detection, invisible
-  let glowLight = new THREE.PointLight(0xFFA500, 0.5, 2, 1);
+  let glowLight = new THREE.PointLight(0xfafad7, 0.5, 2, 1);
   boxPA.position.set(0,star_Height,0);
   boxPB.position.set(0,star_Height,0);
   boxPC.position.set(0,0,0); //Just for Boundary detection, invisible
@@ -330,7 +352,7 @@ function initializeScene(flag){
  }
 
  for (let i=0; i < Bx.length; i++){
-  let particleGroup = createParticleGroup(100,0xFFA500,0.1,boxes_target[i].position.x,boxes_target[i].position.y,boxes_target[i].position.z);
+  let particleGroup = createParticleGroup(100,0xfafad7,0.1,boxes_target[i].position.x,boxes_target[i].position.y,boxes_target[i].position.z);
   particleGroups.push(particleGroup);
  }
 
@@ -792,7 +814,6 @@ function animate() {
       camera_animation_time = 0;
     }
   }
-
 
 
 
