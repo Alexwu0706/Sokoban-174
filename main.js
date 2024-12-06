@@ -34,7 +34,7 @@ composer.addPass(outputPass);
 
 
 document.body.appendChild( renderer.domElement );
-const startGameCameraPosition = new THREE.Vector3(0, 10, 5);
+const startGameCameraPosition = new THREE.Vector3(0, 10, 8);
 const homeScreenCameraPosition = new THREE.Vector3(0, 12, 10);
 const controls = new OrbitControls(camera, renderer.domElement);
 camera.position.set(0,10,10); //after demo(5, 10, 5)
@@ -194,8 +194,13 @@ let hat_Width = 0.2;
 let hat_Angle = Math.PI*25/180; 
 let star_Height = 0.3;
 let playerHands_Height = 0.1; // both hands are synced
+let previousCameraRotation = 0; //camera rotation in degrees
+let previousCameraPosition = startGameCameraPosition; //camera position
 
 function initializeScene(flag){
+ camera.position.copy(previousCameraPosition);
+ camera.lookAt(0, 0, 0);
+ 
  flag = flag % 3; 
  if(flag == 0){
   flag = 3;
@@ -437,7 +442,6 @@ let boxPreviousPosition = new THREE.Vector3();
 let previousLeftHandPosition = new THREE.Vector3();
 let previousRightHandPosition = new THREE.Vector3();
 let cameraTargetPosition = new THREE.Vector3(); 
-let previousCameraRotation = 0; //camera rotation in degrees
 let cameraRadius = 5; // Distance from the camera to the origin
 let currentControls = updateDirection(previousCameraRotation);
 //add homePage to scene initially
@@ -477,6 +481,7 @@ function movePlayer(moveDirection, rotation){
 }
 
 function updateDirection(degrees){
+  previousCameraPosition = camera.position;
   console.log(degrees)
   switch(degrees){
     case 0:
@@ -607,6 +612,25 @@ function checkTargetBoxes(){
  return boxesOnTargets
 
 }
+//play this effect when player wins
+function winParticleEffect(){
+  for (let i = 0; i < Bx.length; i++) {
+    scene.add(particleGroups[i]);
+  }
+  const start = performance.now();
+  const interval = setInterval(() => {
+    const elapsed = performance.now() - start;
+    if (elapsed >= 2000) {
+      clearInterval(interval); // Stop the interval
+      for (let i = 0; i < Bx.length; i++) {
+        scene.remove(particleGroups[i]);
+      }
+      particleGroups = [];
+      resetM = true;
+    }
+  }, 100);
+}
+
 
 ///animation////////////////////////////////////////////////////////////////
 let animation_time = 0;
@@ -719,21 +743,7 @@ function animate() {
           //check for win condition
           if (checkTargetBoxes() == boxes_target.length) {
             levelCleared = true;
-            for (let i = 0; i < Bx.length; i++) {
-              scene.add(particleGroups[i]);
-            }
-            const start = performance.now();
-            const interval = setInterval(() => {
-              const elapsed = performance.now() - start;
-              if (elapsed >= 2000) {
-                clearInterval(interval); // Stop the interval
-                for (let i = 0; i < Bx.length; i++) {
-                  scene.remove(particleGroups[i]);
-                }
-                particleGroups = [];
-                resetM = true;
-              }
-            }, 100); 
+            winParticleEffect();
           }
           isMoving = false; 
           canMove = true;
@@ -845,7 +855,7 @@ function startGame(){
   gameStart = true; 
     scene.remove(homePage);
     bloomPass.strength = 0.25;
-  camera.position.copy(startGameCameraPosition)
+    camera.position.copy(startGameCameraPosition)
 }
 
 //fetch map data then intialize and begin animating the game
@@ -856,6 +866,7 @@ fetch ('./maps.json')
   mapData = data; 
   initializeScene(1); //initialize scene with map 1
   renderer.setAnimationLoop( animate );
+  camera.position.set(0, 10, 10)
 })
 .catch(error => {
   console.error('Error fetching Maps', error);
