@@ -195,12 +195,9 @@ let hat_Angle = Math.PI*25/180;
 let star_Height = 0.3;
 let playerHands_Height = 0.1; // both hands are synced
 let previousCameraRotation = 0; //camera rotation in degrees
-let previousCameraPosition = startGameCameraPosition; //camera position
 
 function initializeScene(flag){
- camera.position.copy(previousCameraPosition);
- camera.lookAt(0, 0, 0);
- 
+ //reset camera position
  flag = flag % 3; 
  if(flag == 0){
   flag = 3;
@@ -481,8 +478,6 @@ function movePlayer(moveDirection, rotation){
 }
 
 function updateDirection(degrees){
-  previousCameraPosition = camera.position;
-  console.log(degrees)
   switch(degrees){
     case 0:
       return {
@@ -614,6 +609,9 @@ function checkTargetBoxes(){
 }
 //play this effect when player wins
 function winParticleEffect(){
+  // winCameraPosition = new THREE.Vector3(players[0].position.x + 2, 0.5, players[0].position.z);
+  // camera.position.copy(winCameraPosition);
+  camera.position.set(14, -5, 10);
   for (let i = 0; i < Bx.length; i++) {
     scene.add(particleGroups[i]);
   }
@@ -629,6 +627,8 @@ function winParticleEffect(){
       resetM = true;
     }
   }, 100);
+
+  //reset camera
 }
 
 
@@ -823,8 +823,14 @@ function animate() {
     players.length = 0;
     playersBB.length = 0;
 
-  //only advance if level cleared
+  //only advance if level cleared and reset camera
     if (levelCleared){
+      camera.position.set(startGameCameraPosition.x, startGameCameraPosition.y, startGameCameraPosition.z);
+      camera.lookAt(0, 0, 0);
+      playerRotation = 0; 
+      previousCameraRotation = 0
+      console.log(camera.position, "camera position");
+      updateDirection(previousCameraRotation);
       console.log(flag, "flag");
       flag = flag + 1;
       levelCleared = false;
