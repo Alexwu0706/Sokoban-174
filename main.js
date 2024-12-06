@@ -162,7 +162,7 @@ const ground_material = new THREE.MeshStandardMaterial({
     map: ground_texture
 });
 // skybox texture needs modification
-const sky_texture = new THREE.CubeTextureLoader().load(['assets/finalproj_skybox_top_TEMP.png', 'assets/finalproj_skybox_top_TEMP.png', 'assets/finalproj_skybox_top_TEMP.png', 'assets/finalproj_skybox_top_TEMP.png', 'assets/finalproj_skybox_top_TEMP.png', 'assets/finalproj_skybox_top_TEMP.png']);
+const sky_texture = new THREE.CubeTextureLoader().load(['assets/skybox_side3.png', 'assets/skybox_side1.png', 'assets/skybox_top.png', 'assets/skybox_bottom.png', 'assets/skybox_side2.png', 'assets/skybox_side4.png']);
 sky_texture.colorSpace = THREE.SRGBColorSpace;
 scene.background = sky_texture;
 const star_material = new THREE.PointsMaterial({
