@@ -328,7 +328,7 @@ function initializeScene(flag){
  }
 
  for (let i=0; i < Bx.length; i++){
-  let particleGroup = createParticleGroup(100,0xFFA500,0.5,boxes_target[i].position.x,boxes_target[i].position.y,boxes_target[i].position.z);
+  let particleGroup = createParticleGroup(100,0xFFA500,0.1,boxes_target[i].position.x,boxes_target[i].position.y,boxes_target[i].position.z);
   particleGroups.push(particleGroup);
  }
 
