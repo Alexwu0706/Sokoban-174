@@ -39,6 +39,9 @@ const homeScreenCameraPosition = new THREE.Vector3(0, 12, 10);
 const controls = new OrbitControls(camera, renderer.domElement);
 camera.position.set(0,10,10); //after demo(5, 10, 5)
 controls.target.set(0, 0, 0);
+controls.enabled = false; // Enable if you'd like to look at the skybox :)
+
+window.addEventListener('resize', onWindowResize);
 
 let playerPosition = new THREE.Vector3(0, 0, 0);
 let playerRotationY = 0;
@@ -47,29 +50,6 @@ let playerRotationY = 0;
 
 const ambientLight = new THREE.AmbientLight(0x333e69, 1);
 scene.add(ambientLight);
-
-class Burst {
-    constructor(scene, position) {
-        this.scene = scene;
-        this.position = position;
-
-        this.nparticles = 200;
-        this.lifetime = 2;
-
-        const geometry = new THREE.BufferGeometry();
-        const positions = [];
-        const velocities = [];
-
-        for (let i = 0; i < this.numParticles; i++) {
-            positions.push(0, 0, 0);
-            velocities.push(
-                (Math.random() - 0.5) * 2,
-                (Math.random() - 0.5) * 2,
-                (Math.random() - 0.5) * 2
-            );
-        }
-    }
-}
 
 
 //game states
@@ -114,13 +94,8 @@ let boxPA_geometry = new THREE.ExtrudeGeometry(starShape, {
 });
 let wall_geometry = new THREE.BoxGeometry( 1, 1, 1 ); 
 let boxPB_geometry = new THREE.SphereGeometry(1 / 2.5);
-let particle_geometry = new THREE.BufferGeometry();
 
 ///Initialization///
-const particle_material = new THREE.PointsMaterial({
-  color: 0xffffff, // White color
-  size: 0.1, // Particle size
-});
 const wall_material = new THREE.MeshPhongMaterial({
  color: 0x808080, //Gray color
  shininess: 100, 
@@ -168,24 +143,62 @@ ground_texture.colorSpace = THREE.SRGBColorSpace;
 const ground_material = new THREE.MeshStandardMaterial({
     map: ground_texture
 });
-// skybox texture needs modification
 const sky_texture = new THREE.CubeTextureLoader().load(['assets/skybox_side3.png', 'assets/skybox_side1.png', 'assets/skybox_top.png', 'assets/skybox_bottom.png', 'assets/skybox_side2.png', 'assets/skybox_side4.png']);
 sky_texture.colorSpace = THREE.SRGBColorSpace;
 scene.background = sky_texture;
 
-function createParticleGroup(particleCount, color, size, particleX, particleY, particleZ) {
-  const positions = new Float32Array(particleCount * 3);
-  for (let i = 0; i < particleCount; i++) {
-    positions[i * 3] = (Math.random() - 0.5)+particleX; // 
-    positions[i * 3 + 1] = (Math.random() - 0.5)+particleY + 3; // 
-    positions[i * 3 + 2] = (Math.random() - 0.5)+particleZ; // 
-  }
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  const material = new THREE.PointsMaterial({ color, size });
-  const particles = new THREE.Points(geometry, material);
+// Particle creation function
+class winSparkle {
+    constructor(scene, x, y, z) {
+        this.scene = scene;
+        this.die = false;
+        const size = 150; // Number of particles
+        this.lifetime = 1500; // Milliseconds
+        this.createTime = Date.now();
 
-  return particles;
+        const positions = new Float32Array(size * 3);
+        this.velocities = new Float32Array(size * 3);
+        for (let i = 0; i < size; i++) {
+            let i3 = i * 3;
+            positions[i3] = x;
+            positions[i3 + 1] = y;
+            positions[i3 + 2] = z;
+            this.velocities[i3] = Math.random() * 0.2 - 0.1; // Probably want to modify these but we'll see
+            this.velocities[i3 + 1] = Math.random() * 0.2;
+            this.velocities[i3 + 2] = Math.random() * 0.2 - 0.1;
+        }
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        const material = new THREE.PointsMaterial({
+            // Could change to custom particle asset if there's time
+            color: 0xfafad7, // Same color as stars
+            size: 0.1
+        });
+        this.particles = new THREE.Points(geometry, material);
+        this.scene.add(this.particles);
+    }
+
+    update() {
+        const deltaTime = Date.now() - this.createTime;
+        if (Date.now() - this.createTime >= this.lifetime) {
+            this.die = true;
+            this.scene.remove(this.particles);
+        } else {
+            const positions = this.particles.geometry.attributes.position.array;
+
+            for (let i = 0; i < positions.length; i += 3) {
+                positions[i] += this.velocities[i];
+                positions[i + 1] += this.velocities[i + 1];
+                positions[i + 2] += this.velocities[i + 2];
+
+                this.velocities[i] -= 0.001; // simulated drag
+                this.velocities[i + 1] += (deltaTime / 1000) **2 * -0.008; // gravitational decay
+                this.velocities[i + 2] -= 0.001;
+            }
+
+            this.particles.geometry.attributes.position.needsUpdate = true;
+        }
+    }
 }
 
 //storing map info 
@@ -217,6 +230,7 @@ let hat_Angle = Math.PI*25/180;
 let star_Height = 0.3;
 let playerHands_Height = 0.1; // both hands are synced
 let previousCameraRotation = 0; //camera rotation in degrees
+let lerpingCamera = false;
 
 function initializeScene(flag){
  //reset camera position
@@ -349,11 +363,6 @@ function initializeScene(flag){
  for (let i=0; i< Gx.length; i++){
   grounds[i].scale.set(1,1/50,1);
   grounds[i].position.set(Gx[i],-l,Gz[i]);
- }
-
- for (let i=0; i < Bx.length; i++){
-  let particleGroup = createParticleGroup(100,0xfafad7,0.1,boxes_target[i].position.x,boxes_target[i].position.y,boxes_target[i].position.z);
-  particleGroups.push(particleGroup);
  }
 
  //add grid to scene
@@ -633,26 +642,45 @@ function checkTargetBoxes(){
 function winParticleEffect(){
   // winCameraPosition = new THREE.Vector3(players[0].position.x + 2, 0.5, players[0].position.z);
   // camera.position.copy(winCameraPosition);
-  camera.position.set(14, -5, 10);
-  for (let i = 0; i < Bx.length; i++) {
-    scene.add(particleGroups[i]);
-  }
-  const start = performance.now();
-  const interval = setInterval(() => {
-    const elapsed = performance.now() - start;
-    if (elapsed >= 2000) {
-      clearInterval(interval); // Stop the interval
-      for (let i = 0; i < Bx.length; i++) {
-        scene.remove(particleGroups[i]);
-      }
-      particleGroups = [];
-      resetM = true;
+    if (!lerpingCamera) {
+        lerpingCamera = true;
+        console.log("Now lerping");
     }
-  }, 100);
+    if (particleGroups.length === 0) {
+        for (let i = 0; i < Bx.length; i++) {
+            const sparkle = new winSparkle(scene, boxes_target[i].position.x, boxes_target[i].position.y + 3, boxes_target[i].position.z);
+            particleGroups.push(sparkle);
+        }
+    }
+    const start = performance.now();
+    const interval = setInterval(() => {
+        const elapsed = performance.now() - start;
+        if (elapsed >= 2000) {
+            clearInterval(interval); // Stop the interval
+            for (let i = particleGroups.length - 1; i >= 0; i--) { // At this point there should not be any left in the scene, but just in case
+                const sparkle = particleGroups[i];
+                scene.remove(sparkle);
+                sparkle.particles.geometry.dispose();
+                sparkle.particles.material.dispose();
+                sparkle.particles = null;
+            }
+            particleGroups = [];
+            resetM = true;
+            lerpingCamera = false;
+            console.log("Done lerping");
+        }
+    }, 100); 
 
   //reset camera
 }
 
+
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+
+    renderer.setSize(window.innerWidth, window.innerHeight);
+}
 
 ///animation////////////////////////////////////////////////////////////////
 let animation_time = 0;
@@ -772,8 +800,25 @@ function animate() {
       }
   }
 
+    for (let i = particleGroups.length - 1; i >= 0; i--) {
+        const sparkle = particleGroups[i];
+        sparkle.update();
+
+        if (sparkle.die) {
+            scene.remove(sparkle);
+            sparkle.particles.geometry.dispose();
+            sparkle.particles.material.dispose();
+            particleGroups.splice(i, 1);
+            sparkle.particles = null;
+        }
+    }
+
+
  //camera transition
 
+    if (lerpingCamera) {
+        camera.position.lerp(new THREE.Vector3(10, -5, 10), 0.1);
+    }
 
   if (panLeft) {  
     canPan = false;
@@ -832,7 +877,10 @@ function animate() {
     }
     for (let i = 0; i < players.length; i++) { 
       scene.remove(players[i]);
-    }
+      }
+      for (let i = particleGroups.length - 1; i >= 0; i--) {
+          scene.remove(particleGroups[i]);
+      }
     // Empty the arrays
     walls.length = 0;
     wallsBB.length = 0;
