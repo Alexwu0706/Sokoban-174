@@ -34,7 +34,7 @@ composer.addPass(outputPass);
 
 
 document.body.appendChild( renderer.domElement );
-const startGameCameraPosition = new THREE.Vector3(0, 10, 5);
+const startGameCameraPosition = new THREE.Vector3(0, 10, 8);
 const homeScreenCameraPosition = new THREE.Vector3(0, 12, 10);
 const controls = new OrbitControls(camera, renderer.domElement);
 camera.position.set(0,10,10); //after demo(5, 10, 5)
@@ -193,8 +193,10 @@ let hat_Width = 0.2;
 let hat_Angle = Math.PI*25/180; 
 let star_Height = 0.3;
 let playerHands_Height = 0.1; // both hands are synced
+let previousCameraRotation = 0; //camera rotation in degrees
 
 function initializeScene(flag){
+ //reset camera position
  flag = flag % 3; 
  if(flag == 0){
   flag = 3;
@@ -425,6 +427,7 @@ let panLeft = false;
 let panRight = false;
 let canPan = true;
 let resetM = false;
+let levelCleared = false;
 let pushingHandOffset = 0.2;
 let playerRotation = 0; 
 let moveDirection = new THREE.Vector3();
@@ -435,7 +438,6 @@ let boxPreviousPosition = new THREE.Vector3();
 let previousLeftHandPosition = new THREE.Vector3();
 let previousRightHandPosition = new THREE.Vector3();
 let cameraTargetPosition = new THREE.Vector3(); 
-let previousCameraRotation = 0; //camera rotation in degrees
 let cameraRadius = 5; // Distance from the camera to the origin
 let currentControls = updateDirection(previousCameraRotation);
 //add homePage to scene initially
@@ -447,7 +449,7 @@ setupClickDetection(camera, homePage)
 
 
 function movePlayer(moveDirection, rotation){
-  if (canMove){
+  if (canMove && !levelCleared){
     direction.set(moveDirection.x, moveDirection.y, moveDirection.z);
     targetPosition.set(players[0].position.x + direction.x, players[0].position.y + direction.y, players[0].position.z + direction.z);
     previousPosition.copy(players[0].position);
@@ -475,7 +477,6 @@ function movePlayer(moveDirection, rotation){
 }
 
 function updateDirection(degrees){
-  console.log(degrees)
   switch(degrees){
     case 0:
       return {
@@ -605,12 +606,35 @@ function checkTargetBoxes(){
  return boxesOnTargets
 
 }
+//play this effect when player wins
+function winParticleEffect(){
+  // winCameraPosition = new THREE.Vector3(players[0].position.x + 2, 0.5, players[0].position.z);
+  // camera.position.copy(winCameraPosition);
+  camera.position.set(14, -5, 10);
+  for (let i = 0; i < Bx.length; i++) {
+    scene.add(particleGroups[i]);
+  }
+  const start = performance.now();
+  const interval = setInterval(() => {
+    const elapsed = performance.now() - start;
+    if (elapsed >= 2000) {
+      clearInterval(interval); // Stop the interval
+      for (let i = 0; i < Bx.length; i++) {
+        scene.remove(particleGroups[i]);
+      }
+      particleGroups = [];
+      resetM = true;
+    }
+  }, 100);
+
+  //reset camera
+}
+
 
 ///animation////////////////////////////////////////////////////////////////
 let animation_time = 0;
 let delta_animation_time;
 const clock = new THREE.Clock();
-let levelCleared = false;
 let flag = 1; //Map Update
 let T_player = 1.5; // Player's floating period in seconds
 let T_boxes = 1; // Boxes's floating period in seconds
@@ -711,31 +735,17 @@ function animate() {
             boxesBB[moveBoxIndex].setFromObject(boxes[moveBoxIndex]);
           }
           playersBB[0].setFromObject(players[0]);
-          canMove = true; 
-          isMoving = false;
           moveBoxIndex = -1; 
           direction.set(0,0,0);
           animation_time_movement = 0; // Reset for future animations
           previousPosition.copy(players[0].position); // Update the start position
           //check for win condition
           if (checkTargetBoxes() == boxes_target.length) {
-            for (let i = 0; i < Bx.length; i++) {
-              scene.add(particleGroups[i]);
-            }
-            const start = performance.now();
-            const interval = setInterval(() => {
-              const elapsed = performance.now() - start;
-              if (elapsed >= 2000) {
-                clearInterval(interval); // Stop the interval
-                for (let i = 0; i < Bx.length; i++) {
-                  scene.remove(particleGroups[i]);
-                }
-                particleGroups = [];
-                resetM = true;
-                levelCleared = true;
-              }
-            }, 100); 
+            levelCleared = true;
+            winParticleEffect();
           }
+          isMoving = false; 
+          canMove = true;
       }
   }
 
@@ -811,8 +821,14 @@ function animate() {
     players.length = 0;
     playersBB.length = 0;
 
-  //only advance if level cleared
+  //only advance if level cleared and reset camera
     if (levelCleared){
+      camera.position.set(startGameCameraPosition.x, startGameCameraPosition.y, startGameCameraPosition.z);
+      camera.lookAt(0, 0, 0);
+      playerRotation = 0; 
+      previousCameraRotation = 0
+      console.log(camera.position, "camera position");
+      updateDirection(previousCameraRotation);
       console.log(flag, "flag");
       flag = flag + 1;
       levelCleared = false;
@@ -843,7 +859,7 @@ function startGame(){
   gameStart = true; 
     scene.remove(homePage);
     bloomPass.strength = 0.25;
-  camera.position.copy(startGameCameraPosition)
+    camera.position.copy(startGameCameraPosition)
 }
 
 //fetch map data then intialize and begin animating the game
@@ -854,6 +870,7 @@ fetch ('./maps.json')
   mapData = data; 
   initializeScene(1); //initialize scene with map 1
   renderer.setAnimationLoop( animate );
+  camera.position.set(0, 10, 10)
 })
 .catch(error => {
   console.error('Error fetching Maps', error);
