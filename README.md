@@ -8,3 +8,5 @@ Box pushing puzzle game
 `Q E` Rotate camera
 
 `R` Reset stage
+
+https://align-stars.netlify.app/
